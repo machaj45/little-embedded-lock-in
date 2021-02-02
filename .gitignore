@@ -1,0 +1,16 @@
+*.aux
+*.swp
+*.user*
+*.lof
+*.log
+*.lot
+*.fls
+*.out
+*.toc
+*.fmt
+*.fot
+*.cb
+*.gz
+*.cb2
+.*.lbW
+Application/__pycache__/*
