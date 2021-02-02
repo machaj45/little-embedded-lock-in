@@ -14,3 +14,4 @@
 *.cb2
 .*.lbW
 Application/__pycache__/*
+Application/lock-in.pyproject.user
