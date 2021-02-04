@@ -20,9 +20,10 @@ import os
 
 class Form(QDialog):
     def closeEvent(self, event):
-        # print('end')
         self.serth.running = False
         self.serth.ser.close()
+        self.reader.stop = True
+        print('Window closed')
 
     def make_gui(self):
         font = self.font()
@@ -31,12 +32,20 @@ class Form(QDialog):
         self.sf = 10
         self.window().setFont(font)
         self.countofdrawing = 0
-        datafile = "icon.ico"
+
+        datafile = "data/icon.ico"
         if not hasattr(sys, "frozen"):
             datafile = os.path.join(os.path.dirname(__file__), datafile)
+            print(datafile)
+            print(" not frozen")
         else:
+            datafile = "icon.ico"
             datafile = os.path.join(sys.prefix, datafile)
+            print(datafile)
+            print("frozen")
+
         self.setWindowIcon(QtGui.QIcon(datafile))
+
         self.loadFileName = 'frec.csv'
         self.saveFileName = 'data.csv'
         self.setWindowFlag(Qt.WindowContextHelpButtonHint, False)
@@ -1027,9 +1036,7 @@ class Form(QDialog):
         self.make_gui()
         # self.setFixedSize(700,700)
 
-
-def createLockin():
-    app = QApplication([])
-    window = Form()
-    window.show()
-    sys.exit(app.exec_())
+app = QApplication([])
+window = Form()
+window.show()
+sys.exit(app.exec_())
