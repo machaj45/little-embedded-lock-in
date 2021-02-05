@@ -95,6 +95,7 @@ class Reader(QtCore.QThread):
         self.stop = False
         self.counter = 0
         self.number_of_readings = 0
+        time.sleep(1)
         while not self.stop:
             time.sleep(0.01)
             self.counter = self.counter + 1

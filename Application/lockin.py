@@ -25,11 +25,12 @@ class Form(QDialog):
         self.reader.stop = True
         print('Window closed')
 
+
     def e10(self):
         if self.edit10.text() != "":
-            a = int(self.edit10.text())
+            a = float(self.edit10.text())
             if 0 < a <= 130000:
-                self.qs_slider10.setValue(int(self.edit10.text()))
+                self.qs_slider10.setValue(float(self.edit10.text()))
                 self.sf = int(self.sample_per_period * a)
                 st = self.select_st_for_sf()
                 self.label_spp.setText(
@@ -151,13 +152,9 @@ class Form(QDialog):
             "Samples per period = {0} [-], Sampling frequency = {1} [Hz], Sampling Time = {2:.3f} [us]".format(
                 int(ssp), self.sf, st))
 
-    def reset(self):
+    def send_command(self):
         self.button13.setEnabled(True)
-        self.acquired_data_Y = []
-        self.acquired_data_X = []
-        self.acquired_data_XX = []
-        self.acquired_data_YY = []
-        self.acquired_data_ZZ = []
+        self.button23.setEnabled(True)
         self.serial_thread.ser_out(self.edit27.text() + "\n")
 
     def load(self) -> bool:
@@ -603,20 +600,6 @@ class Form(QDialog):
         self.serial_thread.data = []
         self.text = []
         self.button13.setEnabled(False)
-        self.serial_thread.ser_out("FRQ!\n")
-        self.serial_thread.ser_out("0\n")
-        self.serial_thread.ser_out(self.edit10.text() + "\n")
-        self.serial_thread.ser_out("SWEP\n")
-        self.serial_thread.ser_out("0\n")
-        self.serial_thread.ser_out("D\n")
-        self.serial_thread.ser_out(self.edit13.text() + "\n")
-        self.serial_thread.ser_out("SWEP\n")
-        self.serial_thread.ser_out("0\n")
-        self.serial_thread.ser_out("U\n")
-        self.serial_thread.ser_out(self.edit14.text() + "\n")
-        self.serial_thread.ser_out("STEP\n")
-        self.serial_thread.ser_out("0\n")
-        self.serial_thread.ser_out(self.edit12.text() + "\n")
         self.serial_thread.ser_out("AMPL\n")
         self.serial_thread.ser_out("0\n")
         self.serial_thread.ser_out(self.edit15.text() + "\n")
@@ -628,26 +611,15 @@ class Form(QDialog):
         if a <= 0:
             a = 5000
         self.serial_thread.ser_out(str(int(a)) + "\n")
+        self.serial_thread.ser_out("FRQ!\n")
+        self.serial_thread.ser_out("0\n")
+        self.serial_thread.ser_out(self.edit10.text() + "\n")
 
     def set_everything1(self):
         self.graphWidget.setMouseEnabled(x=False, y=False)
         self.text = []
         self.serial_thread.send_all_counter = 0
         self.button23.setEnabled(False)
-        self.serial_thread.ser_out("FRQ!\n")
-        self.serial_thread.ser_out("1\n")
-        self.serial_thread.ser_out(self.edit20.text() + "\n")
-        self.serial_thread.ser_out("SWEP\n")
-        self.serial_thread.ser_out("1\n")
-        self.serial_thread.ser_out("D\n")
-        self.serial_thread.ser_out(self.edit23.text() + "\n")
-        self.serial_thread.ser_out("SWEP\n")
-        self.serial_thread.ser_out("1\n")
-        self.serial_thread.ser_out("U\n")
-        self.serial_thread.ser_out(self.edit24.text() + "\n")
-        self.serial_thread.ser_out("STEP\n")
-        self.serial_thread.ser_out("1\n")
-        self.serial_thread.ser_out(self.edit22.text() + "\n")
         self.serial_thread.ser_out("AMPL\n")
         self.serial_thread.ser_out("1\n")
         self.serial_thread.ser_out(self.edit25.text() + "\n")
@@ -659,12 +631,24 @@ class Form(QDialog):
         if a >= 4095:
             a = 4095
         self.serial_thread.ser_out(str(int(a)) + "\n")
+        self.serial_thread.ser_out("FRQ!\n")
+        self.serial_thread.ser_out("1\n")
+        self.serial_thread.ser_out(self.edit20.text() + "\n")
 
     def update_text(self):
         try:
             self.label_xy.setText(self.text_to_update)
             self.label_xy_2.setText(self.text_to_update_2)
-            self.label_connect.setText(self.text_to_update_3)
+            if self.plainText.verticalScrollBar().maximum()!= self.last_vertical_maximum:
+                self.plainText.verticalScrollBar().setValue(self.plainText.verticalScrollBar().maximum() - 2)
+                self.last_vertical_maximum = self.plainText.verticalScrollBar().maximum()
+            if self.last_text != self.text_to_update_3 and self.plainText is not None:
+                self.plainText.insertPlainText(self.text_to_update_3+'\n')
+                self.last_text = self.text_to_update_3
+
+
+
+
         except RuntimeError:
             pass
 
@@ -688,7 +672,7 @@ class Form(QDialog):
             print(datafile)
             print(" not frozen")
         else:
-            datafile = "icon.ico"
+            datafile = "icon.ico/icon.ico"
             datafile = os.path.join(sys.prefix, datafile)
             print(datafile)
             print("frozen")
@@ -712,7 +696,7 @@ class Form(QDialog):
         self.backup3 = []
         self.text_to_update = "Start empty"
         self.text_to_update_2 = "Start empty"
-        self.text_to_update_3 = "Start empty"
+        self.text_to_update_3 = ""
         self.FreqMeasured = []
         self.Gain = []
         self.automatic_measurement_is_done = False
@@ -733,6 +717,7 @@ class Form(QDialog):
         self.ref90n = []
         self.X = []
         self.Y = []
+        self.last_text = ''
         self.Xn = []
         self.Yn = []
         self.data_bin = False
@@ -740,6 +725,7 @@ class Form(QDialog):
         self.acquired_data = []
         self.acquired_data_X = []
         self.acquired_data_Y = []
+        self.last_vertical_maximum = 0
         self.acquired_data_Z = []
         self.text = []
 
@@ -750,7 +736,7 @@ class Form(QDialog):
         self.layout_main_vertical = QVBoxLayout()
         self.layout_vertical_left_gen = QVBoxLayout()
         self.layout_vertical_right_gen = QVBoxLayout()
-        self.layoutHH = QHBoxLayout()
+        self.layout_horizontal_bottom = QHBoxLayout()
         self.layout_horizontal_left_gen = QHBoxLayout()
         self.layout_horizontal_right_gen = QHBoxLayout()
         self.layout_horizontal_connect = QHBoxLayout()
@@ -867,13 +853,13 @@ class Form(QDialog):
         font1.setPointSize(15)
         self.label_xy.setFont(font1)
         self.label_xy_2 = QLabel("XY")
-        self.label_connect = QLabel("Select comport to connect to!")
+
         self.edit_connect = QLineEdit("COM5")
         self.button_scan = QPushButton("Scan")
         self.button_connect = QPushButton("Connect")
         self.button_scan.clicked.connect(self.scan)
         self.button_connect.clicked.connect(self.connect)
-        self.layout_main_vertical.addWidget(self.label_connect)
+
         self.layout_main_vertical.addWidget(self.edit_connect)
         self.layout_horizontal_connect.addWidget(self.button_scan)
         self.layout_horizontal_connect.addWidget(self.button_connect)
@@ -893,7 +879,7 @@ class Form(QDialog):
         self.button_toggle_sin_square.setEnabled(True)
         self.button_automatic_measurement = QPushButton("Automatic Measurement")
         self.button_save_as = QPushButton("Save As")
-        self.button_reset = QPushButton("Reset")
+        self.button_send_command = QPushButton("Send command")
         self.button_continuous = QPushButton("Continuous")
         self.button_single = QPushButton("Single")
         self.button_continuous.clicked.connect(self.read)
@@ -903,7 +889,7 @@ class Form(QDialog):
         self.button_draw_data.clicked.connect(self.plot_data)
         self.button_automatic_measurement.clicked.connect(self.start_stop_measurement)
         self.button_save_as.clicked.connect(self.save_file_dialog)
-        self.button_reset.clicked.connect(self.reset)
+        self.button_send_command.clicked.connect(self.send_command)
         self.drop_down_spp = QComboBox()
         for i in range(3, 11):
             self.drop_down_spp.addItem(str(2 ** i))
@@ -913,14 +899,14 @@ class Form(QDialog):
         self.layout_main_vertical.addWidget(self.label_xy)
         self.layout_main_vertical.addWidget(self.label_xy_2)
         self.layout_main_vertical.addWidget(self.graphWidget)
-        self.layoutHH.addWidget(self.button_continuous)
-        self.layoutHH.addWidget(self.button_single)
-        self.layoutHH.addWidget(self.button_toggle_sin_square)
-        self.layoutHH.addWidget(self.button_draw_data)
-        self.layoutHH.addWidget(self.button_automatic_measurement)
-        self.layoutHH.addWidget(self.button_save_as)
-        self.layoutHH.addWidget(self.button_reset)
-        self.layout_main_vertical.addLayout(self.layoutHH)
+        self.layout_horizontal_bottom.addWidget(self.button_continuous)
+        self.layout_horizontal_bottom.addWidget(self.button_single)
+        self.layout_horizontal_bottom.addWidget(self.button_toggle_sin_square)
+        self.layout_horizontal_bottom.addWidget(self.button_draw_data)
+        self.layout_horizontal_bottom.addWidget(self.button_automatic_measurement)
+        self.layout_horizontal_bottom.addWidget(self.button_save_as)
+        self.layout_horizontal_bottom.addWidget(self.button_send_command)
+        self.layout_main_vertical.addLayout(self.layout_horizontal_bottom)
         self.layout_main_vertical.addWidget(self.edit27)
         self.setLayout(self.layout_main_vertical)
         self.e10()

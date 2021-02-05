@@ -61,7 +61,7 @@ class SerialThread(QtCore.QThread):
                                 self.test = self.test + 1
                                 break
                         except UnicodeDecodeError:
-                            print("here")
+                            print("UnicodeDecodeError in comport_search")
                     s.flushInput()
                     self.serial.close()
             except serial.serialutil.SerialTimeoutException:
@@ -78,7 +78,7 @@ class SerialThread(QtCore.QThread):
         self.running = False
         time.sleep(0.1)
         self.initialize_run_method()
-        self.gui.text_to_update_3 = "Found devices are: "
+        test_local = "Found devices are: "
         for i in serial.tools.list_ports.comports():
             self.serial.port = i.device
             try:
@@ -90,11 +90,12 @@ class SerialThread(QtCore.QThread):
                     if len(data) > 0:
                         try:
                             if "Lock-in Amplifier\n" == data.decode('ascii'):
-                                self.gui.text_to_update_3 = self.gui.text_to_update_3 + " " + str(i.device)
+                                test_local = test_local +  str(i.device)+", "
                         except UnicodeDecodeError:
                             print("UnicodeDecodeError in Scan method")
                     s.flushInput()
                     self.serial.close()
+                self.gui.text_to_update_3 = test_local
             except serial.serialutil.SerialTimeoutException:
                 print("Error timeout on port {}".format(i.device))
             except serial.serialutil.SerialException:
@@ -107,32 +108,26 @@ class SerialThread(QtCore.QThread):
         return self.portConnected
 
     def set_left_gen_gui(self):
-        self.gui.label15.setText("Amplitude - {0} %, Upp = {1} mV".format(self.gui.text[4][:-2], int(
-            3300 * (float(self.gui.text[4][:-2]) / 100))))
-        a = int(3300 * (float(self.gui.text[5][:-1]) / (2 ** 12)))
+        self.gui.label15.setText("Amplitude - {0} %, Upp = {1} mV".format(self.gui.text[0][:-2], int(
+            3300 * (float(self.gui.text[0][:-2]) / 100))))
+        a = int(3300 * (float(self.gui.text[1][:-1]) / (2 ** 12)))
         if a == 0:
             a = 0
         else:
-            a = int(3300 * (float(self.gui.text[5][:-1]) / (2 ** 12))) + 1
+            a = int(3300 * (float(self.gui.text[1][:-1]) / (2 ** 12))) + 1
         self.gui.label16.setText("Offset - {0} mV".format(a))
-        self.gui.label11.setText("Frequency - {0} Hz".format(self.gui.text[0][:-1]))
+        self.gui.label11.setText("Frequency - {0} Hz".format(self.gui.text[2][:-1]))
         self.gui.frequency_gen_1 = float(self.gui.text[0][:-1])
-        self.gui.label12.setText("Step - {0} Hz".format(self.gui.text[3][:-1]))
-        self.gui.label13.setText("F Start - {0} Hz".format(self.gui.text[1][:-1]))
-        self.gui.label14.setText("F Stop - {0} Hz".format(self.gui.text[2][:-1]))
         self.gui.button13.setEnabled(True)
 
     def set_right_gen_gui(self):
-        self.gui.label25.setText("Amplitude - {0} %, Upp = {1} mV".format(self.gui.text[4][:-2], int(
-            3300 * (float(self.gui.text[4][:-2]) / 100))))
-        a = int(3300 * (int(self.gui.text[5][:-1]) / (2 ** 12))) + 1
+        self.gui.label25.setText("Amplitude - {0} %, Upp = {1} mV".format(self.gui.text[0][:-2], int(
+            3300 * (float(self.gui.text[0][:-2]) / 100))))
+        a = int(3300 * (int(self.gui.text[1][:-1]) / (2 ** 12))) + 1
         if a == 1:
             a = 0
         self.gui.label26.setText("Offset - {0} mV".format(a))
-        self.gui.label21.setText("Frequency - {0} Hz".format(self.gui.text[0][:-1]))
-        self.gui.label22.setText("Step - {0} Hz".format(self.gui.text[3][:-1]))
-        self.gui.label23.setText("F Start - {0} Hz".format(self.gui.text[1][:-1]))
-        self.gui.label24.setText("F Stop - {0} Hz".format(self.gui.text[2][:-1]))
+        self.gui.label21.setText("Frequency - {0} Hz".format(self.gui.text[2][:-1]))
         self.gui.button23.setEnabled(True)
 
     def asci_mode(self, s, txd):
@@ -141,8 +136,10 @@ class SerialThread(QtCore.QThread):
         self.data = self.serial.read_until('\n')
         if self.data:
             try:
-                self.gui.plainText.insertPlainText("Send {0},\t Received {1}".format(txd[:-1], self.data.decode('ascii')))
-                self.gui.edit27.setText("{0}".format(self.data.decode('ascii')))
+                text_decoded = self.data.decode('ascii')
+                if text_decoded[-1] == '\r':
+                    text_decoded = text_decoded[:-1]
+                self.gui.plainText.insertPlainText("Send {0},\t Received {1}".format(txd[:-1], text_decoded))
                 self.gui.last_data = "{0}".format(self.data.decode('ascii'))
             except UnicodeDecodeError:
                 self.gui.data_bin = True
@@ -161,7 +158,7 @@ class SerialThread(QtCore.QThread):
                 self.gui.text_to_update_2 = self.gui.text_to_update_2 + " DNR " + str(self.counter_of_dnr_answers)
             self.send_all_counter = self.send_all_counter + 1
 
-        if self.send_all_counter == 6:
+        if self.send_all_counter == 3:
             self.send_all_counter = 0
             if self.gui.button23.isEnabled() and not self.gui.button13.isEnabled():
                 self.set_left_gen_gui()
@@ -202,7 +199,7 @@ class SerialThread(QtCore.QThread):
                         if "Lock-in Amplifier\n" == data.decode('ascii'):
                             checkout = True
                     except UnicodeDecodeError:
-                        print("here")
+                        print("UnicodeDecodeError in check")
                 s.flushInput()
                 self.serial.close()
         except serial.serialutil.SerialException:
@@ -232,8 +229,7 @@ class SerialThread(QtCore.QThread):
             self.serial.port = self.comport
 
         if self.check():
-            self.gui.plainText.insertPlainText("Opening %s at %u baud" % (self.serial.port, self.baud_rate)+'\n')
-            self.gui.text_to_update_3 = "Opening %s at %u baud" % (self.serial.port, self.baud_rate)
+            self.gui.plainText.insertPlainText("Connected to %s at %u baud" % (self.serial.port, self.baud_rate) + '\n')
         else:
             self.gui.plainText.insertPlainText("Un able to connect to comport %s " % self.serial.port + '\n')
 
