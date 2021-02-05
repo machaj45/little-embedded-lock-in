@@ -16,6 +16,9 @@
 Application/__pycache__/*
 Application/.idea/*
 Application/data.cvs
+Application/dist/*
+Application/build/*
+Application/lock-in.spec
 Firmware/Debug/*
 Firmware/.settings/language.settings.xml
 
