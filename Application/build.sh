@@ -18,6 +18,9 @@ case "$(uname -s)" in
      echo 'MS Windows'
      # shellcheck disable=SC2006
      `pyinstaller.exe --onefile  --add-binary "data\\icon.ico;icon.ico" --icon "data\\icon.ico" -n "lock-in"  lockin.py`
+     rm -rf ./build
+     rm -rf ./__pycache__
+     rm  ./lock-in.spec
      #`pyinstaller.exe --onefile -w  --add-binary "data\\icon.ico;data\icon.ico" --icon "data\\icon.ico" -n "lock-in"  lockin.py`
      ;;
 
