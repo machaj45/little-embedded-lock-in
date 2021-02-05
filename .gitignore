@@ -16,3 +16,6 @@
 Application/__pycache__/*
 Application/.idea/*
 Firmware/Debug/*
+Firmware/.settings/language.settings.xml
+
+
