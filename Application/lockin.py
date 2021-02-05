@@ -98,27 +98,27 @@ class Form(QDialog):
             else:
                 self.edit26.setText("1")
 
-    def qslider10update(self, value):
+    def slider_update_10(self, value):
         self.edit10.setText(str(value))
         pass
 
-    def qslider15update(self, value):
+    def slider_update_15(self, value):
         self.edit15.setText(str(value))
         pass
 
-    def qslider16update(self, value):
+    def slider_update_16(self, value):
         self.edit16.setText(str(value))
         pass
 
-    def qslider20update(self, value):
+    def slider_update_20(self, value):
         self.edit20.setText(str(value))
         pass
 
-    def qslider25update(self, value):
+    def slider_update_25(self, value):
         self.edit25.setText(str(value))
         pass
 
-    def qslider26update(self, value):
+    def slider_update_26(self, value):
         self.edit26.setText(str(value))
         pass
 
@@ -144,7 +144,7 @@ class Form(QDialog):
         self.acquired_data_X = []
         self.acquired_data_Y = []
         ssp = float(2 ** i)
-        self.sf = int(ssp * self.frek1)
+        self.sf = int(ssp * self.frequency_gen_1)
         cct = 0.194 / 14.0
         st = 1
         if 0 < self.sf <= 117532:
@@ -188,78 +188,68 @@ class Form(QDialog):
             return True
         return False
 
-    def openFileNameDialog(self):
+    def load_button(self):
+        try:
+            with open(self.loadFileName) as file:
+                self.Freq = []
+                csv_reader = csv.reader(file, delimiter=',')
+                for row in csv_reader:
+                    self.Freq.append(float(row[0]))
+        except FileNotFoundError:
+            self.text_to_update = "File Not Found Please select valid file"
+
+    def open_file_name_dialog(self):
         options = QFileDialog.Options()
         options |= QFileDialog.DontUseNativeDialog
-        fileName, _ = QFileDialog.getOpenFileName(self, "Select Frequency list in .csv format!", "",
-                                                  "Table Files (*.csv)", options=options)
-        if fileName:
-            self.loadFileName = fileName
+        file_name, _ = QFileDialog.getOpenFileName(self, "Select Frequency list in .csv format!", "",
+                                                   "Table Files (*.csv)", options=options)
+        if file_name:
+            self.loadFileName = file_name
             # print(fileName)
         pass
 
-    def saveFileDialog(self):
+    def save_file_dialog(self):
         options = QFileDialog.Options()
         options |= QFileDialog.DontUseNativeDialog
-        fileName, _ = QFileDialog.getSaveFileName(self, "Save as", "", "Table Files (*.csv)", options=options)
-        if fileName:
-            self.saveFileName = fileName
-        # print(fileName)
+        file_name, _ = QFileDialog.getSaveFileName(self, "Save as", "", "Table Files (*.csv)", options=options)
+        if file_name:
+            self.saveFileName = file_name
+        # print(file_name)
         pass
 
     def draw2(self):
         self.serial_thread.ser_out("FILT\n")
         self.serial_thread.ser_out(self.editfil.text() + "\n")
 
-        """
-        self.graphWidget.clear()
-        my = statistics.mean(self.aquaredDataY)
-        mx = statistics.mean(self.aquaredDataX)
-        self.aquaredDataZ=[]
-        for i in range(0,len(self.aquaredDataY)):
-            self.aquaredDataY[i]=self.aquaredDataY[i]-my
-        for i in range(0,len(self.aquaredDataX)):
-            self.aquaredDataX[i]=self.aquaredDataX[i]-mx
-            self.aquaredDataZ.append(self.aquaredDataX[i])
-        for i in range(0,int(self.sample_per_periode/4)):
-            self.aquaredDataZ.insert(0, 0)
-        self.graphWidget.plot(range(0,len(self.aquaredDataY)), self.aquaredDataY,pen=pg.mkPen(color=(255, 0, 0)),name='dut')
-        self.graphWidget.plot(range(0,len(self.aquaredDataX)),self.aquaredDataX,pen=pg.mkPen(color=(0, 255, 0)),name='ref')
-        self.graphWidget.plot(range(0,len(self.aquaredDataZ)),self.aquaredDataZ,pen=pg.mkPen(color=(0, 0, 255)),name='ref90')
-        self.dut = self.aquaredDataY
-        self.ref = self.aquaredDataX
-        self.ref90 = self.aquaredDataZ
-        self.graphWidget.addLegend()
-        """
-
-    def update_plot(self, data):
-        self.graphWidget.plot(range(0, len(self.acquired_data_YY)), self.acquired_data_YY, pen=pg.mkPen(color=(255, 0, 0)),
+    def update_plot(self):
+        self.graphWidget.plot(range(0, len(self.acquired_data_YY)), self.acquired_data_YY,
+                              pen=pg.mkPen(color=(255, 0, 0)),
                               name='dut')
-        self.graphWidget.plot(range(0, len(self.acquired_data_XX)), self.acquired_data_XX, pen=pg.mkPen(color=(0, 255, 0)),
+        self.graphWidget.plot(range(0, len(self.acquired_data_XX)), self.acquired_data_XX,
+                              pen=pg.mkPen(color=(0, 255, 0)),
                               name='ref')
-        self.graphWidget.plot(range(0, len(self.acquired_data_ZZ)), self.acquired_data_ZZ, pen=pg.mkPen(color=(0, 100, 255)),
+        self.graphWidget.plot(range(0, len(self.acquired_data_ZZ)), self.acquired_data_ZZ,
+                              pen=pg.mkPen(color=(0, 100, 255)),
                               name='ref90')
 
     def toggle(self):
-        if self.sin_square_mode == False:
+        if not self.sin_square_mode:
             self.button_toggle_sin_square.setText("Toggle to Sin")
-            # self.buttongraph7.setEnabled(False)
             self.sin_square_mode = True
         else:
-            self.button_toggle_sin_square.setText("Toggle to Sqare")
+            self.button_toggle_sin_square.setText("Toggle to Square")
             self.sin_square_mode = False
-            # self.buttongraph7.setEnabled(True)
         self.serial_thread.ser_out("SINS\n")
         time.sleep(0.1)
-        self.setEverithing0()
+        self.set_everything0()
 
     def draw33(self, plot):
         if self.sin_square_mode:
-            self.squareCalk(plot)
+            self.square_calculation(plot)
         else:
-            self.sinCalk(plot)
+            self.dual_phase_decomposition(plot)
 
-    def squareCalk(self, plot):
+    def square_calculation(self, plot):
         self.text_to_update_2 = 'Sending data'
         if plot:
             self.graphWidget.clear()
@@ -312,12 +302,16 @@ class Form(QDialog):
         self.Y = []
         for i in range(0, len(self.dut)):
             self.X.append(self.dut[i] * self.ref[i])
+        string3 = ""
+        string1 = ""
+        string = ""
+        std_x = 0
         if len(self.X) > 0:
-            mX = statistics.mean(self.X)
-            stdX = statistics.stdev(self.X)
-            dist = int(abs(math.log10(abs(stdX)))) + 4
-            dist2 = int(abs(math.log10(abs(mX)))) + 4
-            dist3 = int(abs(math.log10(abs(mX / stdX))))
+            mean_x = statistics.mean(self.X)
+            std_x = statistics.stdev(self.X)
+            dist = int(abs(math.log10(abs(std_x)))) + 4
+            dist2 = int(abs(math.log10(abs(mean_x)))) + 4
+            dist3 = int(abs(math.log10(abs(mean_x / std_x))))
             dist = max(dist, dist2)
             string = "{:." + str(dist) + "f}"
             string1 = "{:." + str(dist3) + "f}"
@@ -325,45 +319,51 @@ class Form(QDialog):
             string3 = "{:." + str(dist4) + "f}"
 
         else:
-            mX = 1
+            mean_x = 1
         self.acquired_data = []
         self.acquired_data_X = []
         self.acquired_data_Y = []
-        ssttrr = string3.format(self.time_sample)
+        string_for_time_sample = string3.format(self.time_sample)
         try:
-            self.text_to_update = "U\N{SUBSCRIPT TWO} = " + string.format(mX) + " V," + " sigma =" + " " + string.format(
-                stdX) + " V, " + "U\N{SUBSCRIPT TWO}/sigma= " + string1.format(
-                20 * math.log10(mX / stdX)) + " dB\n" + "Time duration = {0} s".format(ssttrr)
+            self.text_to_update = "U\N{SUBSCRIPT TWO} = " + string.format(
+                mean_x) + " V," + " sigma =" + " " + string.format(
+                std_x) + " V, " + "U\N{SUBSCRIPT TWO}/sigma= " + string1.format(
+                20 * math.log10(mean_x / std_x)) + " dB\n" + "Time duration = {0} s".format(string_for_time_sample)
         except ValueError:
-            self.text_to_update = "U\N{SUBSCRIPT TWO} = " + string.format(mX) + " V," + " sigma =" + " " + string.format(
-                stdX) + " V \n" + "Time duration = {0} s".format(ssttrr)
-        self.Gain.append(string.format(mX))
-        # self.Phase.append(ssttrr)
+            self.text_to_update = "U\N{SUBSCRIPT TWO} = " + string.format(
+                mean_x) + " V," + " sigma =" + " " + string.format(
+                std_x) + " V \n" + "Time duration = {0} s".format(string_for_time_sample)
+        self.Gain.append(string.format(mean_x))
+        # self.Phase.append(string_for_time_sample)
         self.reader.calculated = True
 
-    def crossings_nonzero_pos2neg(self, data):
+    @staticmethod
+    def crossings_nonzero_pos2neg(data):
         data = np.array(data)
         pos = data > 0
         return (pos[:-1] & ~pos[1:]).nonzero()[0]
 
-    def crossings_nonzero_neg2pos(self, data):
+    @staticmethod
+    def crossings_nonzero_neg2pos(data):
         data = np.array(data)
         pos = data > 0
         return (pos[1:] & ~pos[:-1]).nonzero()[0]
 
-    def crossings_nonzero_f(self, data):
+    @staticmethod
+    def crossings_nonzero_f(data):
         data = np.array(data)
         pos = data > 0
-        npos = ~pos
-        return ((pos[:-1] & npos[1:]) | (npos[:-1] & pos[1:])).nonzero()[0][0]
+        not_pos = ~pos
+        return ((pos[:-1] & not_pos[1:]) | (not_pos[:-1] & pos[1:])).nonzero()[0][0]
 
-    def crossings_nonzero_l(self, data):
+    @staticmethod
+    def crossings_nonzero_l(data):
         data = np.array(data)
         pos = data > 0
-        npos = ~pos
-        return ((pos[:-1] & npos[1:]) | (npos[:-1] & pos[1:])).nonzero()[0][-1]
+        not_pos = ~pos
+        return ((pos[:-1] & not_pos[1:]) | (not_pos[:-1] & pos[1:])).nonzero()[0][-1]
 
-    def sinCalk(self, plot, strings=None, stringxs=None):
+    def dual_phase_decomposition(self, plot, strings=None, string_for_xy=None):
         self.text_to_update_2 = 'Sending data'
         if plot:
             self.graphWidget.clear()
@@ -394,14 +394,15 @@ class Form(QDialog):
         for i in range(0, int(self.sample_per_period / 4)):
             self.acquired_data_ZZ.insert(0, 0)
 
-        # remove start for angle accuacy
+        # remove start for angle accuracy
 
         del self.acquired_data_XX[0:int(self.sample_per_period / 4)]
         del self.acquired_data_YY[0:int(self.sample_per_period / 4)]
         del self.acquired_data_ZZ[0:int(self.sample_per_period / 4)]
         del self.acquired_data_XX[len(self.acquired_data_XX) - self.sample_per_period:-1]
         del self.acquired_data_YY[len(self.acquired_data_YY) - self.sample_per_period:-1]
-        del self.acquired_data_ZZ[len(self.acquired_data_ZZ) - int(self.sample_per_period + self.sample_per_period / 4):-1]
+        del self.acquired_data_ZZ[
+            len(self.acquired_data_ZZ) - int(self.sample_per_period + self.sample_per_period / 4):-1]
 
         self.dut = [d * (3.30 / 4095) for d in self.acquired_data_YY]
         self.ref = [r * (3.30 / 4095) for r in self.acquired_data_XX]
@@ -410,40 +411,36 @@ class Form(QDialog):
         aa = self.crossings_nonzero_pos2neg(self.ref)
         if len(aa) < 2 * int(len(self.ref) / self.sample_per_period):
             ba = self.crossings_nonzero_neg2pos(self.ref)
-            sref = min(aa[0], ba[0])
-            del self.ref[0:sref]
-            del self.ref90[0:sref]
-            del self.dut[0:sref]
+            min_removed_end = min(aa[0], ba[0])
+            del self.ref[0:min_removed_end]
+            del self.ref90[0:min_removed_end]
+            del self.dut[0:min_removed_end]
 
             a = self.crossings_nonzero_pos2neg(self.ref)
             b = self.crossings_nonzero_neg2pos(self.ref)
 
-            gofor = 0
+            length_of_calculation = 0
             if len(self.dut) > len(self.ref):
-                gofor = len(self.ref)
+                length_of_calculation = len(self.ref)
             if len(self.dut) < len(self.ref):
-                gofor = len(self.dut)
-            lref = gofor
-            if aa[0] == sref:
-                lref = a[-1]
-            if ba[0] == sref:
-                lref = b[-1]
+                length_of_calculation = len(self.dut)
+            length_of_ref = length_of_calculation
+            if aa[0] == min_removed_end:
+                length_of_ref = a[-1]
+            if ba[0] == min_removed_end:
+                length_of_ref = b[-1]
 
-            del self.ref[lref:-1]
-            del self.ref90[lref:-1]
-            del self.dut[lref:-1]
+            del self.ref[length_of_ref:-1]
+            del self.ref90[length_of_ref:-1]
+            del self.dut[length_of_ref:-1]
 
         self.ref_norm = [r ** 2 for r in self.ref]
-        mnr = math.sqrt(statistics.mean(self.ref_norm))
-        # self.texttoupdate3 = str (mnr)
-        Ar = mnr
-        self.ref_norm = [r / Ar for r in self.ref]
+        mrs_norm_ref = math.sqrt(statistics.mean(self.ref_norm))
+        self.ref_norm = [r / mrs_norm_ref for r in self.ref]
 
         self.ref90n = [r ** 2 for r in self.ref90]
-        mnr90 = math.sqrt(statistics.mean(self.ref90n))
-        # self.texttoupdate3 = str (mnr)
-        Ar90 = mnr90
-        self.ref90n = [r / Ar90 for r in self.ref90]
+        mrs_norm_ref_90 = math.sqrt(statistics.mean(self.ref90n))
+        self.ref90n = [r / mrs_norm_ref_90 for r in self.ref90]
 
         del self.ref[-1]
         del self.ref90[-1]
@@ -462,29 +459,26 @@ class Form(QDialog):
         self.Y = []
         self.Xn = []
         self.Yn = []
-        gofor = 0
+        length_of_calculation = 0
         if len(self.dut) >= len(self.ref):
-            gofor = len(self.ref)
+            length_of_calculation = len(self.ref)
         if len(self.dut) <= len(self.ref):
-            gofor = len(self.dut)
-        for i in range(0, gofor):
+            length_of_calculation = len(self.dut)
+        for i in range(0, length_of_calculation):
             self.X.append(self.dut[i] * self.ref[i])
             self.Xn.append(self.dut[i] * self.ref_norm[i])
-        for i in range(0, gofor):
+        for i in range(0, length_of_calculation):
             self.Y.append(self.dut[i] * self.ref90[i])
             self.Yn.append(self.dut[i] * self.ref90n[i])
-        # self.graphWidget.plot(range(0,len(self.X)), self.X,pen=pg.mkPen(color=(255, 0, 0)),name='X')
-        # self.graphWidget.plot(range(0,len(self.Y)), self.Y,pen=pg.mkPen(color=(0, 255, 0)),name='Y')
+        mean_x_norm = 0
+        mean_y_norm = 0
         if len(self.X) > 0:
-            mX = statistics.mean(self.X)
-            mY = statistics.mean(self.Y)
-            mXn = statistics.mean(self.Xn)
-            mYn = statistics.mean(self.Yn)
-            stdX = statistics.stdev(self.Xn)
-            stdY = statistics.stdev(self.Yn)
-            stdX = math.sqrt((2 * stdX) ** 2 + (2 * stdY) ** 2)
+            mean_x = statistics.mean(self.X)
+            mean_y = statistics.mean(self.Y)
+            mean_x_norm = statistics.mean(self.Xn)
+            mean_y_norm = statistics.mean(self.Yn)
         else:
-            mX, mY = 1, 0
+            mean_x, mean_y = 1, 0
         if plot:
             time.sleep(0.1)
             self.graphWidget.addLegend()
@@ -493,70 +487,61 @@ class Form(QDialog):
         self.acquired_data = []
         self.acquired_data_X = []
         self.acquired_data_Y = []
-        sa = -(180 * (math.atan2(mY, mX) / math.pi))
-        dist = math.sqrt(mX ** 2 + mY ** 2)
-        distn = math.sqrt(mXn ** 2 + mYn ** 2)
+        sa = -(180 * (math.atan2(mean_y, mean_x) / math.pi))
+        dist = math.sqrt(mean_x ** 2 + mean_y ** 2)
+        dist_norm = math.sqrt(mean_x_norm ** 2 + mean_y_norm ** 2)
+        input_gain = 1
         if dist > 0:
             if len(self.ref) > 0:
-                RRR = math.sqrt(statistics.mean([r ** 2 for r in self.ref]))
+                input_gain = math.sqrt(statistics.mean([r ** 2 for r in self.ref]))
             else:
-                RRR = 1
-            # self.texttoupdate3="RRR = " + str(RRR)+" dist = "  +str(dist)+" distn = "  +str(distn)
-            sb = 20 * math.log10((distn / RRR))
-            dists = int(abs(math.log10(abs(distn)))) + 4
+                input_gain = 1
+            sb = 20 * math.log10((dist_norm / input_gain))
+            dists = int(abs(math.log10(abs(dist_norm)))) + 4
             string = "{:." + str(dists) + "f}"
             sas = int(abs(math.log10(abs(sa)))) + 4
             strings = "{:." + str(sas) + "f}"
             sbs = int(abs(math.log10(abs(sb)))) + 4
-            stringbs = "{:." + str(sbs) + "f}"
-            sxs = int(abs(math.log10(abs(mX)))) + 4
-            stringxs = "{:." + str(sxs) + "f}"
+            string_bs = "{:." + str(sbs) + "f}"
+            sxs = int(abs(math.log10(abs(mean_x)))) + 4
+            string_for_xy = "{:." + str(sxs) + "f}"
             dist4 = int(abs(math.log10(abs(self.time_sample)))) + 4
             string3 = "{:." + str(dist4) + "f}"
-            ssttrr = string3.format(self.time_sample)
-            self.text_to_update = "Phase = " + strings.format(sa) + "° and  gain = " + stringbs.format(
-                sb) + " dB,\nX: " + stringxs.format(mX) + " Y: " + stringxs.format(
-                mY) + " U\N{SUBSCRIPT TWO} = " + string.format(
+            time_duration_string = string3.format(self.time_sample)
+            self.text_to_update = "Phase = " + strings.format(sa) + "° and  gain = " + string_bs.format(
+                sb) + " dB,\nX: " + string_for_xy.format(mean_x) + " Y: " + string_for_xy.format(
+                mean_y) + " U\N{SUBSCRIPT TWO} = " + string.format(
                 dist) + " V" + " U\N{SUBSCRIPT TWO} / U\N{SUBSCRIPT ONE} = " + string.format(
-                (distn / RRR)) + " " + "\nTime duration = {0} s".format(ssttrr)
+                (dist_norm / input_gain)) + " " + "\nTime duration = {0} s".format(time_duration_string)
         else:
-            self.text_to_update = "Phase = " + strings.format(sa) + "° and  gain = -Inf " + " dB X: " + stringxs.format(
-                mX) + " Y: " + stringxs.format(mY)
-        self.Gain.append(20 * math.log10(dist / RRR))
+            self.text_to_update = "Phase = " + strings.format(sa) + "° and  gain = -Inf " + \
+                                  " dB X: " + string_for_xy.format(mean_x) + " Y: " + string_for_xy.format(mean_y)
+        self.Gain.append(20 * math.log10(dist / input_gain))
         self.Phase.append(sa)
         self.reader.calculated = True
 
     def plot_data(self):
-        """
-        self.graphWidget.clear()
-        self.graphWidget.plotItem.setLogMode(True, False)
-        self.graphWidget.plot(self.FreqMeasured, self.Gain,pen=pg.mkPen(color=(255, 0, 0)),name="Gain")
-        self.graphWidget.plot(self.FreqMeasured, self.Phase,pen=pg.mkPen(color=(0, 255, 0)),name="Phase")
-        self.graphWidget.addLegend()
-        self.graphWidget.addLegend()
-        """
         self.graphWidget.clear()
         self.graphWidget.plot([x * 1 / self.sf for x in range(0, len(self.dut))], self.dut,
                               pen=pg.mkPen(color=(255, 0, 0)), name='dut')
         self.graphWidget.plot([x * 1 / self.sf for x in range(0, len(self.ref))], self.ref,
                               pen=pg.mkPen(color=(0, 255, 0)), name='ref')
-        # self.graphWidget.plot([x * 1/self.sf for x in range(0,len(self.refn))],self.refn,pen=pg.mkPen(color=(100, 0, 200)),name='refn')
-        if self.sin_square_mode == True:
+        if self.sin_square_mode:
             self.graphWidget.plot([x * 1 / self.sf for x in range(0, len(self.X))], self.X,
                                   pen=pg.mkPen(color=(0, 100, 255), style=Qt.DotLine), name='U2')
-        if self.sin_square_mode == False:
+        if not self.sin_square_mode:
             self.graphWidget.plot([x * 1 / self.sf for x in range(0, len(self.ref90))], self.ref90,
                                   pen=pg.mkPen(color=(0, 100, 255)), name='ref90')
         self.graphWidget.addLegend()
         self.graphWidget.setMouseEnabled(x=True, y=True)
 
-    def start_stop_measurment(self):
+    def start_stop_measurement(self):
         self.graphWidget.clear()
-        if self.worker == None:
+        if self.worker is None:
             self.worker = Worker(self, self.serial_thread)
-        self.button_automatic_measurement.setText("Stop Measurment")
+        self.button_automatic_measurement.setText("Stop Measurement")
         if self.worker.running:
-            self.button_automatic_measurement.setText("Automatic Measurment")
+            self.button_automatic_measurement.setText("Automatic Measurement")
             self.worker.stop = True
             time.sleep(1)
             self.worker = Worker(self, self.serial_thread)
@@ -564,7 +549,7 @@ class Form(QDialog):
             self.worker = Worker(self, self.serial_thread)
             self.running = True
             self.stop = False
-            self.openFileNameDialog()
+            self.open_file_name_dialog()
             self.worker.start()
         if self.automatic_measurement_is_done:
             self.automatic_measurement_is_done = False
@@ -592,40 +577,15 @@ class Form(QDialog):
         pass
 
     def read(self):
-        if self.reader.con_flag_stop == True:
+        if self.reader.con_flag_stop:
             return
-        if self.reader.con_flag == False:
+        if not self.reader.con_flag:
             self.reader.con_flag = True
         else:
             self.reader.con_flag_stop = True
 
-        """
-        self.texttoupdate2 = 'Reading number ' + str(self.dataporbe)
-        self.dataporbe = self.dataporbe + 1
-        self.serth.ser_out('DATA\n')3
-
-
-        if(self.rrr == False):
-            self.reader.read = True
-            self.rrr = True
-        else:
-            self.reader.read = False
-            self.rrr = False
-        """
-
     def measure(self):
         self.reader.single_flag = True
-
-    # self.serth.data=[]
-    # self.serth.ser_out("MEAS\n")
-    # self.aquaredData=[]
-    # self.serth.notread = 0
-    #  self.sf = self.sample_per_periode*self.frek1
-    # time_sample = 10000 / self.sf
-    # time.sleep(0.2)
-    # self.serth.ser_out('DATA\n')
-    # time.sleep(6.5)
-    #  self.serth.ser_out('DATA\n')
 
     def start0(self):
         self.serial_thread.ser_out("START\n")
@@ -651,7 +611,7 @@ class Form(QDialog):
         self.serial_thread.ser_out("SWEPS\n")
         self.serial_thread.ser_out("1\n")
 
-    def setEverithing0(self):
+    def set_everything0(self):
         self.graphWidget.setMouseEnabled(x=False, y=False)
         self.data_bin = False
         self.serial_thread.send_all_counter = 0
@@ -661,17 +621,14 @@ class Form(QDialog):
         self.button13.setEnabled(False)
         self.serial_thread.ser_out("FRQ!\n")
         self.serial_thread.ser_out("0\n")
-        # self.edit10.setText(self.serth.ser_out(self.edit10.text()+"\n"))
         self.serial_thread.ser_out(self.edit10.text() + "\n")
         self.serial_thread.ser_out("SWEP\n")
         self.serial_thread.ser_out("0\n")
         self.serial_thread.ser_out("D\n")
-        # self.edit13.setText(self.serth.ser_out(self.edit13.text()+"\n"))
         self.serial_thread.ser_out(self.edit13.text() + "\n")
         self.serial_thread.ser_out("SWEP\n")
         self.serial_thread.ser_out("0\n")
         self.serial_thread.ser_out("U\n")
-        # self.edit14.setText(self.serth.ser_out(self.edit14.text()+"\n"))
         self.serial_thread.ser_out(self.edit14.text() + "\n")
         self.serial_thread.ser_out("STEP\n")
         self.serial_thread.ser_out("0\n")
@@ -688,24 +645,21 @@ class Form(QDialog):
             a = 5000
         self.serial_thread.ser_out(str(int(a)) + "\n")
 
-    def setEverithing1(self):
+    def set_everything1(self):
         self.graphWidget.setMouseEnabled(x=False, y=False)
         self.text = []
         self.serial_thread.send_all_counter = 0
         self.button23.setEnabled(False)
         self.serial_thread.ser_out("FRQ!\n")
         self.serial_thread.ser_out("1\n")
-        # self.edit20.setText(self.serth.ser_out(self.edit20.text()+"\n"))
         self.serial_thread.ser_out(self.edit20.text() + "\n")
         self.serial_thread.ser_out("SWEP\n")
         self.serial_thread.ser_out("1\n")
         self.serial_thread.ser_out("D\n")
-        # self.edit23.setText(self.serth.ser_out(self.edit23.text()+"\n"))
         self.serial_thread.ser_out(self.edit23.text() + "\n")
         self.serial_thread.ser_out("SWEP\n")
         self.serial_thread.ser_out("1\n")
         self.serial_thread.ser_out("U\n")
-        # self.edit24.setText(self.serth.ser_out(self.edit24.text()+"\n"))
         self.serial_thread.ser_out(self.edit24.text() + "\n")
         self.serial_thread.ser_out("STEP\n")
         self.serial_thread.ser_out("1\n")
@@ -733,7 +687,6 @@ class Form(QDialog):
     def __init__(self, parent=None):
         self.serial_thread = SerialThread(115200, self)  # Start serial thread
         self.serial_thread.start()
-        self.rrr = False
         # Start worker thread
         self.reader = Reader(self, self.serial_thread)  # Start reading thread
         self.reader.start()
@@ -757,10 +710,12 @@ class Form(QDialog):
             print("frozen")
 
         self.setWindowIcon(QtGui.QIcon(datafile))
+        self.setWindowFlag(Qt.WindowContextHelpButtonHint, False)
 
         self.loadFileName = 'frec.csv'
         self.saveFileName = 'data.csv'
-        self.setWindowFlag(Qt.WindowContextHelpButtonHint, False)
+        self.worker = None
+        self.sf = 10
         self.backup1 = []
         self.backup2 = []
         self.acquired_data_YY = []
@@ -780,6 +735,7 @@ class Form(QDialog):
         self.sin_square_mode = False
         self.Phase = []
         self.last_data = ""
+        self.stop = None
         self.Freq = []
         self.data_done = False
         self.dataX = 0
@@ -802,6 +758,7 @@ class Form(QDialog):
         self.acquired_data_Y = []
         self.acquired_data_Z = []
         self.text = []
+
         self.edit2 = QLineEdit("Write commands here..")
         self.button1 = QPushButton("SET")
         self.button2 = QPushButton("SET")
@@ -839,17 +796,17 @@ class Form(QDialog):
         self.qs_slider10.setRange(0, 130000)
         self.qs_slider10.setFocusPolicy(Qt.NoFocus)
         self.qs_slider10.setPageStep(1)
-        self.qs_slider10.valueChanged.connect(self.qslider10update)
+        self.qs_slider10.valueChanged.connect(self.slider_update_10)
         self.qs_slider16 = QSlider(Qt.Horizontal, self)
         self.qs_slider16.setRange(0, 3300)
         self.qs_slider16.setFocusPolicy(Qt.NoFocus)
         self.qs_slider16.setPageStep(1)
-        self.qs_slider16.valueChanged.connect(self.qslider16update)
+        self.qs_slider16.valueChanged.connect(self.slider_update_16)
         self.qs_slider15 = QSlider(Qt.Horizontal, self)
         self.qs_slider15.setRange(0, 100)
         self.qs_slider15.setFocusPolicy(Qt.NoFocus)
         self.qs_slider15.setPageStep(1)
-        self.qs_slider15.valueChanged.connect(self.qslider15update)
+        self.qs_slider15.valueChanged.connect(self.slider_update_15)
         self.layout_vertical_left_gen.addWidget(self.label10)
         self.layout_vertical_left_gen.addWidget(self.label15)
         self.layout_vertical_left_gen.addWidget(self.edit15)
@@ -867,7 +824,7 @@ class Form(QDialog):
         self.button10.clicked.connect(self.start0)
         self.button11.clicked.connect(self.stop0)
         self.button12.clicked.connect(self.sweep0)
-        self.button13.clicked.connect(self.setEverithing0)
+        self.button13.clicked.connect(self.set_everything0)
         self.label20 = QLabel("Channel 2 - D13")
         self.label25 = QLabel("Amplitude")
         self.edit25 = QLineEdit("50")
@@ -893,18 +850,17 @@ class Form(QDialog):
         self.qs_slider20.setRange(0, 130000)
         self.qs_slider20.setFocusPolicy(Qt.NoFocus)
         self.qs_slider20.setPageStep(1)
-        self.qs_slider20.valueChanged.connect(self.qslider20update)
+        self.qs_slider20.valueChanged.connect(self.slider_update_20)
         self.qs_slider26 = QSlider(Qt.Horizontal, self)
         self.qs_slider26.setRange(0, 3300)
         self.qs_slider26.setFocusPolicy(Qt.NoFocus)
         self.qs_slider26.setPageStep(1)
-        self.qs_slider26.valueChanged.connect(self.qslider26update)
+        self.qs_slider26.valueChanged.connect(self.slider_update_26)
         self.qs_slider25 = QSlider(Qt.Horizontal, self)
         self.qs_slider25.setRange(0, 100)
         self.qs_slider25.setFocusPolicy(Qt.NoFocus)
         self.qs_slider25.setPageStep(1)
-        self.qs_slider25.valueChanged.connect(self.qslider25update)
-
+        self.qs_slider25.valueChanged.connect(self.slider_update_25)
         self.layout_vertical_right_gen.addWidget(self.label20)
         self.layout_vertical_right_gen.addWidget(self.label25)
         self.layout_vertical_right_gen.addWidget(self.edit25)
@@ -918,12 +874,11 @@ class Form(QDialog):
         self.layout_horizontal_right_gen.addWidget(self.button23)
         self.layout_horizontal_right_gen.addWidget(self.button20)
         self.layout_horizontal_right_gen.addWidget(self.button21)
-
         self.layout_vertical_right_gen.addLayout(self.layout_horizontal_right_gen)
         self.button20.clicked.connect(self.start1)
         self.button21.clicked.connect(self.stop1)
         self.button22.clicked.connect(self.sweep1)
-        self.button23.clicked.connect(self.setEverithing1)
+        self.button23.clicked.connect(self.set_everything1)
         self.label_xy = QLabel("XY")
         font1 = self.font()
         font1.setPointSize(15)
@@ -943,13 +898,11 @@ class Form(QDialog):
         self.layout_horizontal_gen.addLayout(self.layout_vertical_left_gen)
         self.layout_horizontal_gen.addLayout(self.layout_vertical_right_gen)
         self.layout_main_vertical.addLayout(self.layout_horizontal_gen)
-
         self.label_spp = QLabel("Samples per period")
         self.button_spp = QPushButton("Set Samples per period")
         self.graphWidget = pg.PlotWidget()
         self.graphWidget.setMouseEnabled(x=False, y=False)
         self.hist = pg.HistogramLUTItem()
-
         self.button_load = QPushButton("Load")
         self.button_toggle_sin_square = QPushButton("Toggle to Square")
         self.button_draw_data = QPushButton("Draw data")
@@ -960,17 +913,14 @@ class Form(QDialog):
         self.button_reset = QPushButton("Reset")
         self.button_continuous = QPushButton("Continuous")
         self.button_single = QPushButton("Single")
-
         self.button_continuous.clicked.connect(self.read)
         self.button_single.clicked.connect(self.measure)
-        self.button_load.clicked.connect(self.load)
-        self.buttongraph4.clicked.connect(self.draw2)
+        self.button_load.clicked.connect(self.load_button)
         self.button_toggle_sin_square.clicked.connect(self.toggle)
         self.button_draw_data.clicked.connect(self.plot_data)
-        self.button_automatic_measurement.clicked.connect(self.start_stop_measurment)
-        self.button_save_as.clicked.connect(self.saveFileDialog)
+        self.button_automatic_measurement.clicked.connect(self.start_stop_measurement)
+        self.button_save_as.clicked.connect(self.save_file_dialog)
         self.button_reset.clicked.connect(self.reset)
-
         self.drop_down_spp = QComboBox()
         for i in range(3, 11):
             self.drop_down_spp.addItem(str(2 ** i))

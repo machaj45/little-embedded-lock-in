@@ -15,6 +15,7 @@
 .*.lbW
 Application/__pycache__/*
 Application/.idea/*
+Application/data.cvs
 Firmware/Debug/*
 Firmware/.settings/language.settings.xml
 
