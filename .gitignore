@@ -15,3 +15,4 @@
 .*.lbW
 Application/__pycache__/*
 Application/.idea/*
+Firmware/Debug/*
