@@ -40,7 +40,7 @@ class Reader(QtCore.QThread):
             self.serial_thread.data = []
             self.serial_thread.ser_out("MEAS\n")
             self.gui.acquired_data = []
-            self.gui.sf = self.gui.sample_per_periode * self.gui.frequency_gen_1
+            self.gui.sf = self.gui.sample_per_period * self.gui.frequency_gen_1
             self.time_sample = 10000 / self.gui.sf
             self.time_single = 0
         if self.single_running:
@@ -57,7 +57,7 @@ class Reader(QtCore.QThread):
         if self.con_flag:
             if self.con_init:
                 self.con_running = True
-                self.gui.sf = self.gui.sample_per_periode * self.gui.frequency_gen_1
+                self.gui.sf = self.gui.sample_per_period * self.gui.frequency_gen_1
                 self.time_sample = 10000 / self.gui.sf
                 if self.time_sample <= 1:
                     self.time_sample = 1
@@ -99,7 +99,7 @@ class Reader(QtCore.QThread):
             time.sleep(0.01)
             self.counter = self.counter + 1
             if self.counter % 5 == 0:
-                self.gui.textupdate()
+                self.gui.update_text()
             if self.counter % 50 == 0 and self.read:
                 self.reading()
             if self.counter % 10 == 0:

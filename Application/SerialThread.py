@@ -171,8 +171,8 @@ class SerialThread(QtCore.QThread):
 
     def bin_mode(self, open_serial):
         open_serial.timeout = 6
-        data_length_in_bytes = int(10000 / self.gui.sample_per_periode)
-        samples = (data_length_in_bytes - 1) * self.gui.sample_per_periode
+        data_length_in_bytes = int(10000 / self.gui.sample_per_period)
+        samples = (data_length_in_bytes - 1) * self.gui.sample_per_period
         self.gui.text_to_update_2 = str(samples)
         self.gui.data_done = True
         self.data = open_serial.read(int(samples) * 4)
@@ -185,8 +185,8 @@ class SerialThread(QtCore.QThread):
                 number = int(self.data[i * 2]) + int(self.data[i * 2 + 1] * 255)
                 self.gui.acquired_data.append(number)
             self.data = []
-            self.gui.aquaredDataX += (self.gui.acquired_data[0:-1:2])
-            self.gui.aquaredDataY += (self.gui.acquired_data[1:-1:2])
+            self.gui.acquired_data_X += (self.gui.acquired_data[0:-1:2])
+            self.gui.acquired_data_Y += (self.gui.acquired_data[1:-1:2])
             self.gui.draw33(self.gui.plot)
 
     def check(self):
