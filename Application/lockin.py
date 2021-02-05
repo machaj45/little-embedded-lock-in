@@ -21,7 +21,7 @@ import os
 class Form(QDialog):
     def closeEvent(self, event):
         self.serth.running = False
-        self.serth.ser.close()
+        self.serth.serial.close()
         self.reader.stop = True
         print('Window closed')
 
@@ -61,7 +61,7 @@ class Form(QDialog):
         self.backup3 = []
         self.texttoupdate = "Start empty"
         self.texttoupdate2 = "Start empty"
-        self.texttoupdate3 = "Start empty"
+        self.text_to_update_3 = "Start empty"
         self.FreqMeasured = []
         self.Gain = []
         self.automaticMeasurmetIsDone = False
@@ -82,7 +82,7 @@ class Form(QDialog):
         self.Y = []
         self.Xn = []
         self.Yn = []
-        self.databin = False
+        self.data_bin = False
         self.sample_per_periode = 32
         self.aquaredData = []
         self.aquaredDataX = []
@@ -423,10 +423,10 @@ class Form(QDialog):
         self.serth.scan()
         self.serth = SerialThread(115200, self)
         self.serth.comport = self.editcon.text()
-        self.texttoupdate3 = "Connecting to " + self.serth.comport
+        self.text_to_update_3 = "Connecting to " + self.serth.comport
         self.running = True
         self.serth.start()
-        self.reader.serth = self.serth
+        self.reader.serial_thread = self.serth
         pass
 
     def spp(self, i):
@@ -947,8 +947,8 @@ class Form(QDialog):
 
     def setEverithing0(self):
         self.graphWidget.setMouseEnabled(x=False, y=False)
-        self.databin = False
-        self.serth.a = 0
+        self.data_bin = False
+        self.serth.send_all_counter = 0
         self.serth.b = 0
         self.serth.data = []
         self.text = []
@@ -985,7 +985,7 @@ class Form(QDialog):
     def setEverithing1(self):
         self.graphWidget.setMouseEnabled(x=False, y=False)
         self.text = []
-        self.serth.a = 0
+        self.serth.send_all_counter = 0
         self.button23.setEnabled(False)
         self.serth.ser_out("FRQ!\n")
         self.serth.ser_out("1\n")
@@ -1021,7 +1021,7 @@ class Form(QDialog):
         try:
             self.labelxy.setText(self.texttoupdate)
             self.labelxy2.setText(self.texttoupdate2)
-            self.labelcon.setText(self.texttoupdate3)
+            self.labelcon.setText(self.text_to_update_3)
         except RuntimeError:
             pass
 

@@ -19,10 +19,10 @@ class Worker(QtCore.QThread):
         self.gui.Phase = []
         self.gui.FreqMeasured = []
         self.serth.lockinMeasure = False
-        self.gui.databin = False
+        self.gui.data_bin = False
         self.running = False
-        self.gui.texttoupdate = 'User End'
-        self.gui.texttoupdate2 = 'User End'
+        self.gui.text_to_update = 'User End'
+        self.gui.text_to_update_2 = 'User End'
 
     def run(self):
         self.running = True
@@ -35,7 +35,7 @@ class Worker(QtCore.QThread):
         while self.gui.load():
             time.sleep(2)
             pass
-        self.gui.texttoupdate = 'Automatic Measurment Has Begun'
+        self.gui.text_to_update = 'Automatic Measurment Has Begun'
         i = 0
         for f in self.gui.Freq:
             self.gui.plot = False
@@ -47,7 +47,7 @@ class Worker(QtCore.QThread):
             if self.stop:
                 break
             try:
-                fr = float(self.gui.lastdata)
+                fr = float(self.gui.last_data)
                 self.gui.Freq[i] = fr
             except ValueError:
                 print("empty string")
@@ -87,46 +87,46 @@ class Worker(QtCore.QThread):
                 a = 4095
             self.serth.ser_out(str(int(a)) + "\n")
             if self.stop:
-                self.gui.texttoupdate = 'Automatic Measurment Has been Stopped by user'
+                self.gui.text_to_update = 'Automatic Measurment Has been Stopped by user'
                 break
             time.sleep(2)
             if self.stop:
-                self.gui.texttoupdate = 'Automatic Measurment Has been Stopped by user'
+                self.gui.text_to_update = 'Automatic Measurment Has been Stopped by user'
                 break
 
             self.gui.texttoupdate1 = str(self.gui.text)
 
             self.gui.text = []
-            self.gui.texttoupdate2 = 'Frequency send: ' + str(f) + ' Hz, Real frequancy is: ' + str(fr) + ' Hz'
+            self.gui.text_to_update_2 = 'Frequency send: ' + str(f) + ' Hz, Real frequancy is: ' + str(fr) + ' Hz'
             self.serth.notread = 0
             self.serth.ser_out("MEAS\n")
             time_sample = 10000 / self.gui.sf
             if self.stop:
-                self.gui.texttoupdate = 'Automatic Measurment Has been Stopped by user'
+                self.gui.text_to_update = 'Automatic Measurment Has been Stopped by user'
                 break
             time.sleep(time_sample + 1)
             if self.stop:
-                self.gui.texttoupdate = 'Automatic Measurment Has been Stopped by user'
+                self.gui.text_to_update = 'Automatic Measurment Has been Stopped by user'
                 break
             self.serth.ser_out("DATA\n")
             # time.sleep(2)
             if self.stop:
-                self.gui.texttoupdate = 'Automatic Measurment Has been Stopped by user'
+                self.gui.text_to_update = 'Automatic Measurment Has been Stopped by user'
                 break
             time.sleep(7)
             if self.stop:
-                self.gui.texttoupdate = 'Automatic Measurment Has been Stopped by user'
+                self.gui.text_to_update = 'Automatic Measurment Has been Stopped by user'
                 break
-            while self.gui.datadone == False:
+            while self.gui.data_done == False:
                 self.serth.ser_out("DATA\n")
                 if self.stop:
-                    self.gui.texttoupdate = 'Automatic Measurment Has been Stopped by user'
+                    self.gui.text_to_update = 'Automatic Measurment Has been Stopped by user'
                     break
                 time.sleep(1)
-            self.gui.datadone = False
+            self.gui.data_done = False
         # time.sleep(3)
         self.gui.texttoupdate1 = 'Done'
-        self.gui.texttoupdate2 = 'Done'
+        self.gui.text_to_update_2 = 'Done'
         self.gui.buttongraph7.setText("Automatic Measurment")
         self.gui.save()
         self.f = None

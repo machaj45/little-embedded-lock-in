@@ -1138,8 +1138,8 @@ int main(void)
 	if(Transfer_cplt!=0){
 		switch(getRequest()){
 			case 0:newinput= atoi(Rx_Buffer);break;
-			case 1:pr("DDS Generator\n");sin_square=1;break;
-			case 2:pr("Version 0.0.2\n");break;
+			case 1:pr("Lock-in Amplifier\n");sin_square=1;break;
+			case 2:pr("Version 1.0.1\n");break;
 			case 3:pr("Frequency is %d\n",100);break;
 			case 4:;break;
 			case 5:pr("Starting Generator\n");sweep0=0;break;
