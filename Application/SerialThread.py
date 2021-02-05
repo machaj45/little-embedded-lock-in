@@ -141,12 +141,12 @@ class SerialThread(QtCore.QThread):
         self.data = self.serial.read_until('\n')
         if self.data:
             try:
-                self.gui.setWindowTitle("Send {0}, Received {1}".format(txd, self.data.decode('ascii')))
+                self.gui.plainText.insertPlainText("Send {0},\t Received {1}".format(txd[:-1], self.data.decode('ascii')))
                 self.gui.edit27.setText("{0}".format(self.data.decode('ascii')))
                 self.gui.last_data = "{0}".format(self.data.decode('ascii'))
             except UnicodeDecodeError:
                 self.gui.data_bin = True
-                self.gui.setWindowTitle("Turning on bin mode")
+                self.gui.plainText.insertPlainText("Turning on bin mode\n")
                 return
             self.gui.text.append(self.data.decode('ascii'))
             if self.gui.last_data == "MD\n\r":
@@ -223,7 +223,7 @@ class SerialThread(QtCore.QThread):
                     self.comport = self.serial.port
                 else:
                     self.gui.button13.setEnabled(True)
-                self.gui.setWindowTitle('Not Connected attempt {0}'.format(self.count))
+                self.gui.plainText.insertPlainText('Not Connected attempt {0}\n'.format(self.count))
                 self.count = self.count + 1
                 if self.count > 10:
                     self.serial.close()
@@ -232,10 +232,10 @@ class SerialThread(QtCore.QThread):
             self.serial.port = self.comport
 
         if self.check():
-            self.gui.setWindowTitle("Opening %s at %u baud" % (self.serial.port, self.baud_rate))
+            self.gui.plainText.insertPlainText("Opening %s at %u baud" % (self.serial.port, self.baud_rate)+'\n')
             self.gui.text_to_update_3 = "Opening %s at %u baud" % (self.serial.port, self.baud_rate)
         else:
-            self.gui.setWindowTitle("Un able to connect to comport %s " % self.serial.port)
+            self.gui.plainText.insertPlainText("Un able to connect to comport %s " % self.serial.port + '\n')
 
         # -------------------------------------------------------------------------------#
         # Connected to right port

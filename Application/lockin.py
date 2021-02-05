@@ -3,7 +3,7 @@
 
 import sys
 from PyQt5.QtWidgets import QDialog, QLineEdit, QPushButton, QApplication
-from PyQt5.QtWidgets import QVBoxLayout, QLabel, QHBoxLayout, QComboBox, QSlider, QFileDialog
+from PyQt5.QtWidgets import QVBoxLayout, QLabel, QHBoxLayout, QComboBox, QSlider, QFileDialog, QPlainTextEdit
 from PyQt5.QtCore import Qt
 from PyQt5 import QtGui
 import math
@@ -25,33 +25,13 @@ class Form(QDialog):
         self.reader.stop = True
         print('Window closed')
 
-    def make_gui(self):
-        pass
-
     def e10(self):
         if self.edit10.text() != "":
             a = int(self.edit10.text())
             if 0 < a <= 130000:
                 self.qs_slider10.setValue(int(self.edit10.text()))
                 self.sf = int(self.sample_per_period * a)
-                cct = 0.194 / 14.0
-                st = 1
-                if 0 < self.sf <= 117532:
-                    st = 601.5 * cct
-                if 117533 < self.sf <= 371984:
-                    st = 181.5 * cct
-                if 371984 < self.sf <= 975202:
-                    st = 61.5 * cct
-                if 975202 < self.sf <= 2255154:
-                    st = 19.5 * cct
-                if 2255154 < self.sf <= 3608247:
-                    st = 7.5 * cct
-                if 3608247 < self.sf <= 4244997:
-                    st = 4.5 * cct
-                if 4244997 < self.sf <= 4810996:
-                    st = 2.5 * cct
-                if 4810996 < self.sf <= 5154639:
-                    st = 1.5 * cct
+                st = self.select_st_for_sf()
                 self.label_spp.setText(
                     "Samples per period = {0} [-], Sampling frequency = {1} [Hz], Sampling Time = {2:.3f} [us]".format(
                         int(self.sample_per_period), self.sf, st))
@@ -136,15 +116,7 @@ class Form(QDialog):
         self.reader.serial_thread = self.serial_thread
         pass
 
-    def spp(self, i):
-        i = i + 3
-        self.serial_thread.ser_out("SAMP\n")
-        self.serial_thread.ser_out(str(2 ** i) + "\n")
-        self.sample_per_period = 2 ** i
-        self.acquired_data_X = []
-        self.acquired_data_Y = []
-        ssp = float(2 ** i)
-        self.sf = int(ssp * self.frequency_gen_1)
+    def select_st_for_sf(self):
         cct = 0.194 / 14.0
         st = 1
         if 0 < self.sf <= 117532:
@@ -163,6 +135,18 @@ class Form(QDialog):
             st = 2.5 * cct
         if 4810996 < self.sf <= 5154639:
             st = 1.5 * cct
+        return st
+
+    def spp(self, i):
+        i = i + 3
+        self.serial_thread.ser_out("SAMP\n")
+        self.serial_thread.ser_out(str(2 ** i) + "\n")
+        self.sample_per_period = 2 ** i
+        self.acquired_data_X = []
+        self.acquired_data_Y = []
+        ssp = float(2 ** i)
+        self.sf = int(ssp * self.frequency_gen_1)
+        st = self.select_st_for_sf()
         self.label_spp.setText(
             "Samples per period = {0} [-], Sampling frequency = {1} [Hz], Sampling Time = {2:.3f} [us]".format(
                 int(ssp), self.sf, st))
@@ -770,8 +754,7 @@ class Form(QDialog):
         self.layout_horizontal_left_gen = QHBoxLayout()
         self.layout_horizontal_right_gen = QHBoxLayout()
         self.layout_horizontal_connect = QHBoxLayout()
-        self.label_name = QLabel("Little Embedded Lock-in Bc. Jan Machálek, ver 1.0")
-        self.layout_main_vertical.addWidget(self.label_name)
+        self.setWindowTitle("Little Embedded Lock-in")
         self.label10 = QLabel("Channel 1 - A2")
         self.label15 = QLabel("Amplitude")
         self.edit15 = QLineEdit("85")
@@ -946,6 +929,9 @@ class Form(QDialog):
         self.e20()
         self.e25()
         self.e26()
+        self.plainText = QPlainTextEdit(self)
+        self.plainText.insertPlainText("Program Start.\n")
+        self.layout_main_vertical.addWidget(self.plainText)
 
 
 app = QApplication([])
