@@ -1,3 +1,6 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+
 import sys
 from PyQt5.QtWidgets import QApplication, QLabel, QPushButton, QMainWindow
 from PyQt5.QtCore import Qt

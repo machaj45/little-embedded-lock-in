@@ -1,5 +1,5 @@
 #!/bin/bash
-
+# -*- coding: utf-8 -*-
 
 
 #!/bin/sh

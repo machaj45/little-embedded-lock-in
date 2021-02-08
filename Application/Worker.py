@@ -1,5 +1,6 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
+
 from PyQt5 import QtCore
 import time
 
@@ -49,7 +50,7 @@ class Worker(QtCore.QThread):
                 fr = float(self.gui.last_data)
                 self.gui.Freq[i] = fr
             except ValueError:
-                print("empty string")
+                self.gui.plainText.insertPlainText('ValueError in run in worker' + '\n')
                 fr = f
 
             self.gui.sf = int(self.gui.sample_per_period * fr)

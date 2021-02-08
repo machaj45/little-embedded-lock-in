@@ -21,10 +21,10 @@ import os
 class Form(QDialog):
     def closeEvent(self, event):
         self.serial_thread.running = False
-        self.serial_thread.serial.close()
+        if self.serial_thread.serial is not None:
+            self.serial_thread.serial.close()
         self.reader.stop = True
         print('Window closed')
-
 
     def e10(self):
         if self.edit10.text() != "":
@@ -104,17 +104,20 @@ class Form(QDialog):
         pass
 
     def scan(self):
-        self.serial_thread.scan()
+        self.serial_thread.running = False
         pass
 
     def connect(self):
-        self.serial_thread.scan()
-        self.serial_thread = SerialThread(115200, self)
-        self.serial_thread.comport = self.edit_connect.text()
-        self.text_to_update_3 = "Connecting to " + self.serial_thread.comport
+        self.reader.in_scan_mode = True
+        available_ports = self.serial_thread.available_ports
+        self.running = False
+        self.serial_thread.running = False
+        time.sleep(0.4)
+        self.serial_thread = SerialThread(115200, self,available_ports[self.selected_comport])
         self.running = True
         self.serial_thread.start()
         self.reader.serial_thread = self.serial_thread
+        self.reader.in_scan_mode = False
         pass
 
     def select_st_for_sf(self):
@@ -137,6 +140,10 @@ class Form(QDialog):
         if 4810996 < self.sf <= 5154639:
             st = 1.5 * cct
         return st
+
+    def comports(self, i):
+        self.selected_comport = i
+        pass
 
     def spp(self, i):
         i = i + 3
@@ -165,7 +172,7 @@ class Form(QDialog):
                 for row in csv_reader:
                     self.Freq.append(float(row[0]))
         except FileNotFoundError:
-            self.text_to_update = "File Not Found Please select valid file"
+            self.gui.plainText.insertPlainText('FileNotFoundError load, load returning true' + '\n')
             return True
         return False
 
@@ -177,7 +184,7 @@ class Form(QDialog):
                 for row in csv_reader:
                     self.Freq.append(float(row[0]))
         except FileNotFoundError:
-            self.text_to_update = "File Not Found Please select valid file"
+            self.gui.plainText.insertPlainText('File Not Found Please select valid file' + '\n')
 
     def open_file_name_dialog(self):
         options = QFileDialog.Options()
@@ -197,10 +204,6 @@ class Form(QDialog):
             self.saveFileName = file_name
         # print(file_name)
         pass
-
-    def draw2(self):
-        self.serial_thread.ser_out("FILT\n")
-        self.serial_thread.ser_out(self.editfil.text() + "\n")
 
     def update_plot(self):
         self.graphWidget.plot(range(0, len(self.acquired_data_YY)), self.acquired_data_YY,
@@ -224,16 +227,14 @@ class Form(QDialog):
         time.sleep(0.1)
         self.set_everything0()
 
-    def draw33(self, plot):
+    def do_calculation(self):
         if self.sin_square_mode:
-            self.square_calculation(plot)
+            self.square_calculation()
         else:
-            self.dual_phase_decomposition(plot)
+            self.dual_phase_decomposition()
 
-    def square_calculation(self, plot):
+    def square_calculation(self):
         self.text_to_update_2 = 'Sending data'
-        if plot:
-            self.graphWidget.clear()
         a = 0
         while len(self.acquired_data_Y) == 0:
             time.sleep(0.2)
@@ -272,13 +273,8 @@ class Form(QDialog):
                 self.ref[a] = -1
             a = a + 1
 
-        if plot:
-            self.graphWidget.plot(range(0, len(self.dut)), self.dut, pen=pg.mkPen(color=(255, 0, 0)), name='dut')
-            self.graphWidget.plot(range(0, len(self.ref)), self.ref, pen=pg.mkPen(color=(0, 255, 0)), name='ref')
             # vaclav.grim@fel.cvut.cz
 
-        if plot:
-            self.graphWidget.addLegend()
         self.X = []
         self.Y = []
         for i in range(0, len(self.dut)):
@@ -344,10 +340,8 @@ class Form(QDialog):
         not_pos = ~pos
         return ((pos[:-1] & not_pos[1:]) | (not_pos[:-1] & pos[1:])).nonzero()[0][-1]
 
-    def dual_phase_decomposition(self, plot, strings=None, string_for_xy=None):
+    def dual_phase_decomposition(self, strings=None, string_for_xy=None):
         self.text_to_update_2 = 'Sending data'
-        if plot:
-            self.graphWidget.clear()
         a = 0
         while len(self.acquired_data_Y) == 0:
             time.sleep(0.2)
@@ -428,14 +422,6 @@ class Form(QDialog):
         ref_length = len(self.ref)
         self.time_sample = ref_length / self.sf
 
-        if plot:
-            self.graphWidget.plot(range(0, len(self.dut)), self.dut, pen=pg.mkPen(color=(255, 0, 0)), name='dut')
-            self.graphWidget.plot(range(0, len(self.ref)), self.ref, pen=pg.mkPen(color=(0, 255, 0)), name='ref')
-            self.graphWidget.plot(range(0, len(self.ref90)), self.ref90, pen=pg.mkPen(color=(0, 100, 255)),
-                                  name='ref90')
-
-        if plot:
-            self.graphWidget.addLegend()
         self.X = []
         self.Y = []
         self.Xn = []
@@ -460,11 +446,7 @@ class Form(QDialog):
             mean_y_norm = statistics.mean(self.Yn)
         else:
             mean_x, mean_y = 1, 0
-        if plot:
-            time.sleep(0.1)
-            self.graphWidget.addLegend()
-            time.sleep(0.1)
-            self.graphWidget.addLegend()
+
         self.acquired_data = []
         self.acquired_data_X = []
         self.acquired_data_Y = []
@@ -639,21 +621,19 @@ class Form(QDialog):
         try:
             self.label_xy.setText(self.text_to_update)
             self.label_xy_2.setText(self.text_to_update_2)
-            if self.plainText.verticalScrollBar().maximum()!= self.last_vertical_maximum:
-                self.plainText.verticalScrollBar().setValue(self.plainText.verticalScrollBar().maximum() - 2)
+            if self.plainText.verticalScrollBar().maximum() != self.last_vertical_maximum:
+                self.plainText.verticalScrollBar().setValue(self.plainText.verticalScrollBar().maximum() - 1)
                 self.last_vertical_maximum = self.plainText.verticalScrollBar().maximum()
             if self.last_text != self.text_to_update_3 and self.plainText is not None:
-                self.plainText.insertPlainText(self.text_to_update_3+'\n')
+                self.plainText.insertPlainText(self.text_to_update_3 + '\n')
                 self.last_text = self.text_to_update_3
-
-
-
-
         except RuntimeError:
+            self.gui.plainText.insertPlainText('RuntimeError in update_text' + '\n')
             pass
 
     def __init__(self, parent=None):
-        self.serial_thread = SerialThread(115200, self)  # Start serial thread
+        self.selected_comport = 0
+        self.serial_thread = SerialThread(115200, self,None)  # Start serial thread
         self.serial_thread.start()
         # Start worker thread
         self.reader = Reader(self, self.serial_thread)  # Start reading thread
@@ -854,13 +834,15 @@ class Form(QDialog):
         self.label_xy.setFont(font1)
         self.label_xy_2 = QLabel("XY")
 
-        self.edit_connect = QLineEdit("COM5")
+        self.drop_down_comports = QComboBox()
+
         self.button_scan = QPushButton("Scan")
         self.button_connect = QPushButton("Connect")
         self.button_scan.clicked.connect(self.scan)
         self.button_connect.clicked.connect(self.connect)
 
-        self.layout_main_vertical.addWidget(self.edit_connect)
+        self.layout_main_vertical.addWidget(self.drop_down_comports)
+        self.drop_down_comports.currentIndexChanged.connect(self.comports)
         self.layout_horizontal_connect.addWidget(self.button_scan)
         self.layout_horizontal_connect.addWidget(self.button_connect)
         self.layout_main_vertical.addLayout(self.layout_horizontal_connect)
@@ -891,6 +873,7 @@ class Form(QDialog):
         self.button_save_as.clicked.connect(self.save_file_dialog)
         self.button_send_command.clicked.connect(self.send_command)
         self.drop_down_spp = QComboBox()
+
         for i in range(3, 11):
             self.drop_down_spp.addItem(str(2 ** i))
         self.drop_down_spp.currentIndexChanged.connect(self.spp)

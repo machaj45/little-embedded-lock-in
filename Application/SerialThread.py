@@ -1,3 +1,6 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+
 import serial
 import time
 import serial.tools.list_ports
@@ -8,18 +11,17 @@ SER_TIMEOUT = 0.08
 
 
 class SerialThread(QtCore.QThread):
-    def __init__(self, baud_rate, gui):  # Initialise with serial port details
+    def __init__(self, baud_rate, gui,comport):  # Initialise with serial port details
         QtCore.QThread.__init__(self)
         self.baud_rate = baud_rate
         self.data_out_queue = queue.Queue()
         self.running = True
         self.gui = gui
         self.send_all_counter = 0
-        self.comport = None
+        self.comport = comport
         self.serial = None
-        self.test = 0
         self.count = 0
-        self.portConnected = 0
+        self.available_ports = []
         self.counter_of_dnr_answers = 0
         self.data = 0
 
@@ -37,9 +39,8 @@ class SerialThread(QtCore.QThread):
     def initialize_run_method(self):
         self.serial = serial.Serial(baudrate=self.baud_rate, bytesize=serial.EIGHTBITS, parity=serial.PARITY_NONE,
                                     stopbits=serial.STOPBITS_ONE, timeout=SER_TIMEOUT, write_timeout=0.01)
-        self.test = 0
         self.count = 1
-        self.portConnected = 'nop'
+        self.available_ports = []
         self.send_all_counter = 0
         self.counter_of_dnr_answers = 0
 
@@ -56,56 +57,21 @@ class SerialThread(QtCore.QThread):
                         try:
                             if "Lock-in Amplifier\n" == data.decode('ascii'):
                                 # print("i.device")
-                                self.portConnected = i.device
+                                self.available_ports.append(i.device)
                                 self.serial.port = i.device
-                                self.test = self.test + 1
-                                break
                         except UnicodeDecodeError:
-                            print("UnicodeDecodeError in comport_search")
+                            self.gui.plainText.insertPlainText('UnicodeDecodeError in comport_search' + '\n')
                     s.flushInput()
                     self.serial.close()
             except serial.serialutil.SerialTimeoutException:
-                print("Error timeout on port {}".format(i.device))
+                self.gui.plainText.insertPlainText("Error timeout on port {}".format(i.device) + '\n')
             except serial.serialutil.SerialException:
                 self.serial.close()
                 self.initialize_run_method()
-                self.gui.text_to_update = "Device has been disconnected in comport_search()"
+                self.gui.plainText.insertPlainText("Serial.serialutil.SerialException in comport_search()" + '\n')
                 continue
 
-        return self.portConnected
-
-    def scan(self):
-        self.running = False
-        time.sleep(0.1)
-        self.initialize_run_method()
-        test_local = "Found devices are: "
-        for i in serial.tools.list_ports.comports():
-            self.serial.port = i.device
-            try:
-                with self.serial as s:
-                    time.sleep(0.2)
-                    s.write(b'IDN?\n')
-                    s.flush()
-                    data = s.read(size=18)
-                    if len(data) > 0:
-                        try:
-                            if "Lock-in Amplifier\n" == data.decode('ascii'):
-                                test_local = test_local +  str(i.device)+", "
-                        except UnicodeDecodeError:
-                            print("UnicodeDecodeError in Scan method")
-                    s.flushInput()
-                    self.serial.close()
-                self.gui.text_to_update_3 = test_local
-            except serial.serialutil.SerialTimeoutException:
-                print("Error timeout on port {}".format(i.device))
-            except serial.serialutil.SerialException:
-                self.serial.close()
-                self.initialize_run_method()
-                self.gui.text_to_update = "SerialException in Scan method -> closing serial and running " \
-                                          "initialize_run_method() "
-                continue
-
-        return self.portConnected
+        return self.available_ports
 
     def set_left_gen_gui(self):
         self.gui.label15.setText("Amplitude - {0} %, Upp = {1} mV".format(self.gui.text[0][:-2], int(
@@ -184,7 +150,7 @@ class SerialThread(QtCore.QThread):
             self.data = []
             self.gui.acquired_data_X += (self.gui.acquired_data[0:-1:2])
             self.gui.acquired_data_Y += (self.gui.acquired_data[1:-1:2])
-            self.gui.draw33(self.gui.plot)
+            self.gui.do_calculation(self.gui.plot)
 
     def check(self):
         checkout = False
@@ -199,39 +165,58 @@ class SerialThread(QtCore.QThread):
                         if "Lock-in Amplifier\n" == data.decode('ascii'):
                             checkout = True
                     except UnicodeDecodeError:
-                        print("UnicodeDecodeError in check")
+                        self.gui.plainText.insertPlainText("UnicodeDecodeError in check\n")
                 s.flushInput()
                 self.serial.close()
         except serial.serialutil.SerialException:
             self.serial.close()
             self.initialize_run_method()
-            self.gui.text_to_update = "Device has been disconnected in scan"
+            self.gui.plainText.insertPlainText("SerialException in check\n")
         return checkout
 
     def run(self):
         data_out_queue = ''
+        self.running = True
         self.initialize_run_method()
-        if self.comport is None:
-            while self.test == 0:
-                time.sleep(0.2)
-                self.portConnected = self.comport_search()
-                if self.portConnected != 'nop':
-                    self.serial.port = self.portConnected
-                    self.comport = self.serial.port
-                else:
-                    self.gui.button13.setEnabled(True)
-                self.gui.plainText.insertPlainText('Not Connected attempt {0}\n'.format(self.count))
-                self.count = self.count + 1
-                if self.count > 10:
-                    self.serial.close()
-                    self.initialize_run_method()
-        else:
-            self.serial.port = self.comport
+        t_comport = None
+        if self.comport is not None:
+            t_comport = self.comport
 
+        while len(self.available_ports) == 0:
+            time.sleep(0.2)
+            self.available_ports = self.comport_search()
+            if len(self.available_ports) > 0:
+                self.serial.port = self.available_ports[0]
+                self.comport = self.serial.port
+            else:
+                self.gui.button13.setEnabled(True)
+            self.gui.plainText.insertPlainText(
+                'Not Connected,\t attempting to connect number {0}\n'.format(self.count))
+            self.count = self.count + 1
+            if self.count > 10:
+                self.serial.close()
+                self.initialize_run_method()
+                self.gui.plainText.insertPlainText(
+                    'Not Connected,\t resetting serial  \n')
+
+            if t_comport is not None:
+                self.serial.port = t_comport
+                self.comport = t_comport
+            else:
+                self.serial.port = self.comport
+        txt = ''
         if self.check():
             self.gui.plainText.insertPlainText("Connected to %s at %u baud" % (self.serial.port, self.baud_rate) + '\n')
+            txt = "Available  port are: "
+            self.gui.drop_down_comports.clear()
+            for s in self.available_ports:
+                txt += ("%s" % s + ', ')
+                self.gui.drop_down_comports.addItem(s)
+            txt = txt[:-2]
+            self.gui.plainText.insertPlainText(txt + '\n')
         else:
-            self.gui.plainText.insertPlainText("Un able to connect to comport %s " % self.serial.port + '\n')
+            self.gui.plainText.insertPlainText("Unable to connect to comport %s " % self.serial.port + '\n')
+            self.running = False
 
         # -------------------------------------------------------------------------------#
         # Connected to right port
@@ -255,9 +240,13 @@ class SerialThread(QtCore.QThread):
                         self.gui.data_bin = False
                     self.data = []
             except serial.serialutil.SerialException:
-                self.gui.text_to_update = "SerialException in running enabling send all button and waiting"
+                self.gui.plainText.insertPlainText("SerialException in running enabling send all \
+                                                        button and waiting\n")
                 self.gui.button13.setEnabled(True)
-                time.sleep(SER_TIMEOUT)
+                self.serial.close()
+                self.running = False
+                self.available_ports = []
+
         if self.serial:
             self.serial.close()
             self.serial = None
