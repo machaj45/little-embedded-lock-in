@@ -23,8 +23,8 @@ class Worker(QtCore.QThread):
         self.gui.FreqMeasured = []
         self.gui.data_bin = False
         self.running = False
-        self.gui.text_to_update = 'User End'
-        self.gui.text_to_update_2 = 'User End'
+        self.gui.plainText.insertPlainText('User ended automatic measurement' + '\n')
+
 
     def run(self):
         self.running = True
@@ -86,46 +86,45 @@ class Worker(QtCore.QThread):
                 a = 4095
             self.serial_thread.ser_out(str(int(a)) + "\n")
             if self.stop:
-                self.gui.text_to_update = 'Automatic Measurement Has been Stopped by user'
+                self.gui.plainText.insertPlainText('Automatic Measurement Has been Stopped by user' + '\n')
                 break
             time.sleep(2)
             if self.stop:
-                self.gui.text_to_update = 'Automatic Measurement Has been Stopped by user'
+                self.gui.plainText.insertPlainText('Automatic Measurement Has been Stopped by user' + '\n')
                 break
 
             self.gui.text_to_update_1 = str(self.gui.text)
 
             self.gui.text = []
-            self.gui.text_to_update_2 = 'Frequency send: ' + str(f) + ' Hz, Real frequency is: ' + str(fr) + ' Hz'
+            self.gui.plainText.insertPlainText('Frequency send: ' + str(f) +
+                                               ' Hz, Real frequency is: ' + str(fr) + ' Hz' + '\n')
             self.serial_thread.ser_out("MEAS\n")
             time_sample = 10000 / self.gui.sf
             if self.stop:
-                self.gui.text_to_update = 'Automatic Measurement Has been Stopped by user'
+                self.gui.plainText.insertPlainText('Automatic Measurement Has been Stopped by user' + '\n')
                 break
             time.sleep(time_sample + 1)
             if self.stop:
-                self.gui.text_to_update = 'Automatic Measurement Has been Stopped by user'
+                self.gui.plainText.insertPlainText('Automatic Measurement Has been Stopped by user' + '\n')
                 break
             self.serial_thread.ser_out("DATA\n")
             # time.sleep(2)
             if self.stop:
-                self.gui.text_to_update = 'Automatic Measurement Has been Stopped by user'
+                self.gui.plainText.insertPlainText('Automatic Measurement Has been Stopped by user' + '\n')
                 break
             time.sleep(7)
             if self.stop:
-                self.gui.text_to_update = 'Automatic Measurement Has been Stopped by user'
+                self.gui.plainText.insertPlainText('Automatic Measurement Has been Stopped by user' + '\n')
                 break
             while not self.gui.data_done:
                 self.serial_thread.ser_out("DATA\n")
                 if self.stop:
-                    self.gui.text_to_update = 'Automatic Measurement Has been Stopped by user'
+                    self.gui.plainText.insertPlainText('Automatic Measurement Has been Stopped by user' + '\n')
                     break
                 time.sleep(1)
             self.gui.data_done = False
-        self.gui.text_to_update_1 = 'Done'
-        self.gui.text_to_update_2 = 'Done'
+        self.gui.plainText.insertPlainText('Automatic Measurement is now complete!' + '\n')
         self.gui.button_automatic_measurement.setText("Automatic Measurement")
-        self.gui.save()
         self.f = None
         if not self.stop:
             self.gui.automatic_measurement_is_done = True

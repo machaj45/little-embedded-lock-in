@@ -3,10 +3,10 @@
 
 import sys
 
-from PyQt5.QtGui import QPainter, QPixmap, QPen
-from PyQt5.QtWidgets import QDialog, QLineEdit, QPushButton, QApplication, QWidget
+from PyQt5.QtGui import QPainter
+from PyQt5.QtWidgets import QDialog, QLineEdit, QPushButton, QApplication, QWidget, QGroupBox
 from PyQt5.QtWidgets import QVBoxLayout, QLabel, QHBoxLayout, QComboBox, QSlider, QFileDialog, QPlainTextEdit
-from PyQt5.QtCore import Qt, QRectF, QSize
+from PyQt5.QtCore import Qt
 from PyQt5 import QtGui
 import math
 from SerialThread import SerialThread
@@ -21,34 +21,31 @@ import os
 import urllib.request
 from bs4 import BeautifulSoup
 import re
-import random
 
 
 class AnotherWindow(QWidget):
-    """
-    This "window" is a QWidget. If it has no parent, it
-    will appear as a free-floating window as we want.
-    """
 
-    def __init__(self,icon):
+    def __init__(self, icon):
         super().__init__()
         layout = QVBoxLayout()
         self.label = QLabel("Another Window")
         layout.addWidget(self.label)
         self.setLayout(layout)
         self.icon = icon
-        datafile = "data/hi_res_icon.png"
-        datafile = os.path.join(os.path.dirname(__file__), datafile)
-        self.icon = QtGui.QIcon(datafile)
-        self.setFixedSize(410, 800)
-        self.setWindowTitle("Help for Lock-in Amplifier")
 
+        datafile = "data/hi_res_icon.png"
+        if not hasattr(sys, "frozen"):
+            datafile = os.path.join(os.path.dirname(__file__), datafile)
+        else:
+            datafile = "hi_res_icon.png/hi_res_icon.png"
+            datafile = os.path.join(sys.prefix, datafile)
+        self.icon = QtGui.QIcon(datafile)
+        self.setFixedSize(410, 600)
+        self.setWindowTitle("Help for Lock-in Amplifier")
 
     def paintEvent(self, event):
         painter = QPainter(self)
-        painter.drawPixmap(0,0,410,195, self.icon.pixmap(410, 195))
-
-
+        painter.drawPixmap(0, 0, 410, 195, self.icon.pixmap(410, 195))
 
 
 class Form(QDialog):
@@ -240,7 +237,7 @@ class Form(QDialog):
                 for row in csv_reader:
                     self.Freq.append(float(row[0]))
         except FileNotFoundError:
-            self.gui.plainText.insertPlainText('FileNotFoundError load, load returning true' + '\n')
+            self.plainText.insertPlainText('FileNotFoundError load, load returning true' + '\n')
             return True
         return False
 
@@ -252,7 +249,7 @@ class Form(QDialog):
                 for row in csv_reader:
                     self.Freq.append(float(row[0]))
         except FileNotFoundError:
-            self.gui.plainText.insertPlainText('File Not Found Please select valid file' + '\n')
+            self.plainText.insertPlainText('File Not Found Please select valid file' + '\n')
 
     def open_file_name_dialog(self):
         options = QFileDialog.Options()
@@ -261,7 +258,8 @@ class Form(QDialog):
                                                    "Table Files (*.csv)", options=options)
         if file_name:
             self.loadFileName = file_name
-            # print(fileName)
+            self.plainText.insertPlainText('Automatic measurement will be using frequencies from file:\n'
+                                           + self.loadFileName + '\n')
         pass
 
     def save_file_dialog(self):
@@ -271,6 +269,11 @@ class Form(QDialog):
         if file_name:
             self.saveFileName = file_name
         # print(file_name)
+        if len(self.Freq)>0:
+            self.save()
+            self.plainText.insertPlainText('Data has been saved in to ' + self.saveFileName + '\n')
+        else:
+            self.plainText.insertPlainText('No data to write to file ' + self.saveFileName + '\n')
         pass
 
     def update_plot(self):
@@ -302,7 +305,6 @@ class Form(QDialog):
             self.dual_phase_decomposition()
 
     def square_calculation(self):
-        self.text_to_update_2 = 'Sending data'
         a = 0
         while len(self.acquired_data_Y) == 0:
             time.sleep(0.2)
@@ -409,7 +411,6 @@ class Form(QDialog):
         return ((pos[:-1] & not_pos[1:]) | (not_pos[:-1] & pos[1:])).nonzero()[0][-1]
 
     def dual_phase_decomposition(self, strings=None, string_for_xy=None):
-        self.text_to_update_2 = 'Sending data'
         a = 0
         while len(self.acquired_data_Y) == 0:
             time.sleep(0.2)
@@ -697,7 +698,7 @@ class Form(QDialog):
                     self.plainText.insertPlainText(self.text_to_update_3 + '\n')
                 self.last_text = self.text_to_update_3
         except RuntimeError:
-            self.gui.plainText.insertPlainText('RuntimeError in update_text' + '\n')
+            self.plainText.insertPlainText('RuntimeError in update_text' + '\n')
             pass
 
     def __init__(self, parent=None):
@@ -719,19 +720,15 @@ class Form(QDialog):
         datafile = "data/icon.ico"
         if not hasattr(sys, "frozen"):
             datafile = os.path.join(os.path.dirname(__file__), datafile)
-            print(datafile)
-            print(" not frozen")
         else:
             datafile = "icon.ico/icon.ico"
             datafile = os.path.join(sys.prefix, datafile)
-            print(datafile)
-            print("frozen")
         self.icon = QtGui.QIcon(datafile)
         self.w = AnotherWindow(self.icon)
         self.setWindowIcon(self.icon)
         self.setWindowFlag(Qt.WindowContextHelpButtonHint, False)
         self.gui_version = 'v1.0.2'
-        self.fir_version = 1
+        self.fir_version = 'nop'
         self.loadFileName = 'frec.csv'
         self.saveFileName = 'data.csv'
         self.worker = None
@@ -746,8 +743,8 @@ class Form(QDialog):
         self.acquired_data_ZZ = []
         self.data_probe = 0
         self.backup3 = []
-        self.text_to_update = "Start empty"
-        self.text_to_update_2 = "Start empty"
+        self.text_to_update = "After measurement data will be displayed here!"
+        self.text_to_update_2 = "Program start"
         self.text_to_update_3 = ""
         self.FreqMeasured = []
         self.Gain = []
@@ -786,14 +783,24 @@ class Form(QDialog):
         self.button2 = QPushButton("SET")
         self.layout_horizontal_gen = QHBoxLayout()
         self.layout_main_vertical = QVBoxLayout()
+        self.group_box_connectivity = QGroupBox("Connectivity")
+        self.group_box_connectivity.setCheckable(False)
+        self.group_box_left_gen = QGroupBox("Generator channel 1 - pin A2")
+        self.group_box_left_gen.setCheckable(False)
+        self.group_box_right_gen = QGroupBox("Generator channel 2 - pin D13")
+        self.group_box_right_gen.setCheckable(False)
         self.layout_vertical_left_gen = QVBoxLayout()
+        self.group_box_left_gen.setLayout(self.layout_vertical_left_gen)
         self.layout_vertical_right_gen = QVBoxLayout()
+        self.group_box_right_gen.setLayout(self.layout_vertical_right_gen)
         self.layout_horizontal_bottom = QHBoxLayout()
         self.layout_horizontal_left_gen = QHBoxLayout()
         self.layout_horizontal_right_gen = QHBoxLayout()
         self.layout_horizontal_connect = QHBoxLayout()
+        self.layout_horizontal_connect_out = QVBoxLayout()
+        self.layout_horizontal_connect_out.addLayout(self.layout_horizontal_connect)
+        self.group_box_connectivity.setLayout(self.layout_horizontal_connect_out)
         self.setWindowTitle("Little Embedded Lock-in")
-        self.label10 = QLabel("Channel 1 - A2")
         self.label15 = QLabel("Amplitude")
         self.edit15 = QLineEdit("85")
         self.edit15.textChanged.connect(self.e15)
@@ -828,7 +835,6 @@ class Form(QDialog):
         self.qs_slider15.setFocusPolicy(Qt.NoFocus)
         self.qs_slider15.setPageStep(1)
         self.qs_slider15.valueChanged.connect(self.slider_update_15)
-        self.layout_vertical_left_gen.addWidget(self.label10)
         self.layout_vertical_left_gen.addWidget(self.label15)
         self.layout_vertical_left_gen.addWidget(self.edit15)
         self.layout_vertical_left_gen.addWidget(self.qs_slider15)
@@ -846,7 +852,6 @@ class Form(QDialog):
         self.button11.clicked.connect(self.stop0)
         self.button12.clicked.connect(self.sweep0)
         self.button13.clicked.connect(self.set_everything0)
-        self.label20 = QLabel("Channel 2 - D13")
         self.label25 = QLabel("Amplitude")
         self.edit25 = QLineEdit("50")
         self.edit25.textChanged.connect(self.e25)
@@ -862,13 +867,13 @@ class Form(QDialog):
         self.edit23 = QLineEdit("10")
         self.label24 = QLabel("F Stop")
         self.edit24 = QLineEdit("1000")
-        self.edit27 = QLineEdit("TEXT")
+        self.edit27 = QLineEdit("Commands for Lock-in.\t Ex. \"IDN?\"")
         self.button20 = QPushButton("Start")
         self.button21 = QPushButton("Stop")
         self.button22 = QPushButton("Sweep")
         self.button23 = QPushButton("Set up Generator 2")
         self.qs_slider20 = QSlider(Qt.Horizontal, self)
-        self.qs_slider20.setRange(0, 130000)
+        self.qs_slider20.setRange(0, 60000)
         self.qs_slider20.setFocusPolicy(Qt.NoFocus)
         self.qs_slider20.setPageStep(1)
         self.qs_slider20.valueChanged.connect(self.slider_update_20)
@@ -882,7 +887,6 @@ class Form(QDialog):
         self.qs_slider25.setFocusPolicy(Qt.NoFocus)
         self.qs_slider25.setPageStep(1)
         self.qs_slider25.valueChanged.connect(self.slider_update_25)
-        self.layout_vertical_right_gen.addWidget(self.label20)
         self.layout_vertical_right_gen.addWidget(self.label25)
         self.layout_vertical_right_gen.addWidget(self.edit25)
         self.layout_vertical_right_gen.addWidget(self.qs_slider25)
@@ -915,14 +919,14 @@ class Form(QDialog):
         self.button_help = QPushButton("Help")
         self.button_help.clicked.connect(self.show_new_window)
 
-        self.layout_main_vertical.addWidget(self.drop_down_comports)
+        self.layout_horizontal_connect_out.addWidget(self.drop_down_comports)
         self.drop_down_comports.currentIndexChanged.connect(self.comports)
         self.layout_horizontal_connect.addWidget(self.button_scan)
         self.layout_horizontal_connect.addWidget(self.button_connect)
         self.layout_horizontal_connect.addWidget(self.button_help)
-        self.layout_main_vertical.addLayout(self.layout_horizontal_connect)
-        self.layout_horizontal_gen.addLayout(self.layout_vertical_left_gen)
-        self.layout_horizontal_gen.addLayout(self.layout_vertical_right_gen)
+        self.layout_main_vertical.addWidget(self.group_box_connectivity)
+        self.layout_horizontal_gen.addWidget(self.group_box_left_gen)
+        self.layout_horizontal_gen.addWidget(self.group_box_right_gen)
         self.layout_main_vertical.addLayout(self.layout_horizontal_gen)
         self.label_spp = QLabel("Samples per period")
         self.button_spp = QPushButton("Set Samples per period")
@@ -952,11 +956,25 @@ class Form(QDialog):
         for i in range(3, 11):
             self.drop_down_spp.addItem(str(2 ** i))
         self.drop_down_spp.currentIndexChanged.connect(self.spp)
-        self.layout_main_vertical.addWidget(self.label_spp)
-        self.layout_main_vertical.addWidget(self.drop_down_spp)
-        self.layout_main_vertical.addWidget(self.label_xy)
-        self.layout_main_vertical.addWidget(self.label_xy_2)
-        self.layout_main_vertical.addWidget(self.graphWidget)
+
+        self.group_box_ssp = QGroupBox("Sampling settings")
+        self.group_box_ssp.setCheckable(False)
+
+        self.layout_vertical_ssp = QVBoxLayout()
+        self.layout_vertical_ssp.addWidget(self.label_spp)
+        self.layout_vertical_ssp.addWidget(self.drop_down_spp)
+
+        self.group_box_ssp.setLayout(self.layout_vertical_ssp)
+        self.layout_main_vertical.addWidget(self.group_box_ssp)
+
+        self.group_box_out = QGroupBox("Output")
+        self.group_box_out.setCheckable(False)
+        self.layout_vertical_output = QVBoxLayout()
+
+        self.layout_vertical_output.addWidget(self.label_xy)
+        self.layout_vertical_output.addWidget(self.label_xy_2)
+        self.layout_vertical_output.addWidget(self.graphWidget)
+
         self.layout_horizontal_bottom.addWidget(self.button_continuous)
         self.layout_horizontal_bottom.addWidget(self.button_single)
         self.layout_horizontal_bottom.addWidget(self.button_toggle_sin_square)
@@ -964,7 +982,9 @@ class Form(QDialog):
         self.layout_horizontal_bottom.addWidget(self.button_automatic_measurement)
         self.layout_horizontal_bottom.addWidget(self.button_save_as)
         self.layout_horizontal_bottom.addWidget(self.button_send_command)
-        self.layout_main_vertical.addLayout(self.layout_horizontal_bottom)
+        self.layout_vertical_output.addLayout(self.layout_horizontal_bottom)
+        self.group_box_out.setLayout(self.layout_vertical_output)
+        self.layout_main_vertical.addWidget(self.group_box_out)
         self.layout_main_vertical.addWidget(self.edit27)
         self.setLayout(self.layout_main_vertical)
         self.e10()

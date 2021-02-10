@@ -32,7 +32,7 @@ class Reader(QtCore.QThread):
         self.in_scan_mode = False
 
     def reading(self):
-        self.gui.text_to_update_2 = 'Reading number ' + str(self.number_of_readings)
+        self.plainText.insertPlainText('Data read attempt #' + str(self.number_of_readings) + '\n')
         self.number_of_readings = self.number_of_readings + 1
         self.serial_thread.ser_out('DATA\n')
 
@@ -77,7 +77,7 @@ class Reader(QtCore.QThread):
             if self.take_next_measurement and self.calculated:
                 if self.con_flag_stop:
                     self.con_flag = False
-                    self.gui.text_to_update_2 = "con end"
+                    self.gui.text_to_update_2 = "end of continual measurement"
                     self.con_flag_stop = False
                     return
                 self.calculated = False

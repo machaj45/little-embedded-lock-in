@@ -121,7 +121,8 @@ class SerialThread(QtCore.QThread):
             if self.gui.last_data == "DNR\n\r":
                 self.counter_of_dnr_answers = self.counter_of_dnr_answers + 1
                 self.gui.last_data = ""
-                self.gui.text_to_update_2 = self.gui.text_to_update_2 + " DNR " + str(self.counter_of_dnr_answers)
+                self.gui.plainText.insertPlainText("DNR #" + str(self.counter_of_dnr_answers) + '\n')
+
             self.send_all_counter = self.send_all_counter + 1
 
         if self.send_all_counter == 3:
@@ -136,7 +137,7 @@ class SerialThread(QtCore.QThread):
         open_serial.timeout = 6
         data_length_in_bytes = int(10000 / self.gui.sample_per_period)
         samples = (data_length_in_bytes - 1) * self.gui.sample_per_period
-        self.gui.text_to_update_2 = str(samples)
+        self.gui.plainText.insertPlainText("Number of samples " + str(samples) + '\n')
         self.gui.data_done = True
         self.data = open_serial.read(int(samples) * 4)
         open_serial.timeout = SER_TIMEOUT
@@ -150,7 +151,7 @@ class SerialThread(QtCore.QThread):
             self.data = []
             self.gui.acquired_data_X += (self.gui.acquired_data[0:-1:2])
             self.gui.acquired_data_Y += (self.gui.acquired_data[1:-1:2])
-            self.gui.do_calculation(self.gui.plot)
+            self.gui.do_calculation()
 
     def check(self):
         checkout = False
@@ -164,6 +165,28 @@ class SerialThread(QtCore.QThread):
                     try:
                         if "Lock-in Amplifier\n" == data.decode('ascii'):
                             checkout = True
+                    except UnicodeDecodeError:
+                        self.gui.plainText.insertPlainText("UnicodeDecodeError in check\n")
+                s.flushInput()
+                s.write(b'VER?\n')
+                s.flush()
+                data = s.read(size=14)
+                if len(data) > 0:
+                    try:
+                        self.gui.fir_version = data.decode('ascii')
+                        i = 1
+                        check = 0
+                        txt = self.gui.fir_version[8:-1]
+                        for ss in txt:
+                            if ss == self.gui.gui_version[i]:
+                                check = check + 1
+                            i = i + 1
+                        if check == 5:
+                            self.gui.plainText.insertPlainText("Firmware version and gui version are same!\n")
+                        else:
+                            self.gui.plainText.insertPlainText("Firmware version and gui version are not same!\n")
+                            self.gui.plainText.insertPlainText("Please update your firmware!\n")
+
                     except UnicodeDecodeError:
                         self.gui.plainText.insertPlainText("UnicodeDecodeError in check\n")
                 s.flushInput()
