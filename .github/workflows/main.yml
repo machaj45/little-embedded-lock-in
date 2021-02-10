@@ -26,6 +26,10 @@ jobs:
       # Runs a single command using the runners shell
       - name: Make build executable
         run: chmod +x Application/build.sh
-      - name: Run a one-line script
-        run: Application/build.sh
-
+      - name: PyInstaller Linux
+        # You may pin to the exact commit or the version.
+        # uses: JackMcKew/pyinstaller-action-linux@38639c352a36917eea765f9283bfd1092c28af7b
+        uses: JackMcKew/pyinstaller-action-linux@0.1.4
+        with:
+          # Directory containing source code & .spec file (optional requirements.txt).
+          path: Application
