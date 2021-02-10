@@ -13,7 +13,7 @@ case "$(uname -s)" in
 
    Linux)
      echo 'Linux'
-     # shellcheck disable=SC2006  
+     # shellcheck disable=SC2006   
      `pyinstaller --onefile  --add-binary "data/icon.ico,icon.ico" --add-binary "data/hi_res_icon.png,hi_res_icon.png" --icon "data/icon.ico" -n "lock-in"  lockin.py`
      ;;
 
