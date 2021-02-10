@@ -2,14 +2,12 @@
 # -*- coding: utf-8 -*-
 
 import sys
-
 from PyQt5.QtGui import QPainter
 from PyQt5.QtCore import QTimer
 from PyQt5.QtWidgets import QDialog, QLineEdit, QPushButton, QApplication, QWidget, QGroupBox
 from PyQt5.QtWidgets import QVBoxLayout, QLabel, QHBoxLayout, QComboBox, QSlider, QFileDialog, QPlainTextEdit
 from PyQt5.QtCore import Qt
 from PyQt5 import QtGui
-from PyQt5 import QtSerialPort
 import math
 from SerialThread import SerialThread
 from Worker import Worker
