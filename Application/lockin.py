@@ -2,9 +2,11 @@
 # -*- coding: utf-8 -*-
 
 import sys
+
+from PyQt5.QtGui import QPainter, QPixmap, QPen
 from PyQt5.QtWidgets import QDialog, QLineEdit, QPushButton, QApplication, QWidget
 from PyQt5.QtWidgets import QVBoxLayout, QLabel, QHBoxLayout, QComboBox, QSlider, QFileDialog, QPlainTextEdit
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, QRectF, QSize
 from PyQt5 import QtGui
 import math
 from SerialThread import SerialThread
@@ -19,6 +21,7 @@ import os
 import urllib.request
 from bs4 import BeautifulSoup
 import re
+import random
 
 
 class AnotherWindow(QWidget):
@@ -27,12 +30,25 @@ class AnotherWindow(QWidget):
     will appear as a free-floating window as we want.
     """
 
-    def __init__(self):
+    def __init__(self,icon):
         super().__init__()
         layout = QVBoxLayout()
         self.label = QLabel("Another Window")
         layout.addWidget(self.label)
         self.setLayout(layout)
+        self.icon = icon
+        datafile = "data/hi_res_icon.png"
+        datafile = os.path.join(os.path.dirname(__file__), datafile)
+        self.icon = QtGui.QIcon(datafile)
+        self.setFixedSize(410, 800)
+        self.setWindowTitle("Help for Lock-in Amplifier")
+
+
+    def paintEvent(self, event):
+        painter = QPainter(self)
+        painter.drawPixmap(0,0,410,195, self.icon.pixmap(410, 195))
+
+
 
 
 class Form(QDialog):
@@ -685,7 +701,7 @@ class Form(QDialog):
             pass
 
     def __init__(self, parent=None):
-        self.w = AnotherWindow()
+
         self.selected_comport = 0
         self.serial_thread = SerialThread(115200, self, None)  # Start serial thread
         self.serial_thread.start()
@@ -710,10 +726,11 @@ class Form(QDialog):
             datafile = os.path.join(sys.prefix, datafile)
             print(datafile)
             print("frozen")
-
-        self.setWindowIcon(QtGui.QIcon(datafile))
+        self.icon = QtGui.QIcon(datafile)
+        self.w = AnotherWindow(self.icon)
+        self.setWindowIcon(self.icon)
         self.setWindowFlag(Qt.WindowContextHelpButtonHint, False)
-        self.gui_version = 'v1.0.1'
+        self.gui_version = 'v1.0.2'
         self.fir_version = 1
         self.loadFileName = 'frec.csv'
         self.saveFileName = 'data.csv'

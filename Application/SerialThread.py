@@ -11,7 +11,7 @@ SER_TIMEOUT = 0.08
 
 
 class SerialThread(QtCore.QThread):
-    def __init__(self, baud_rate, gui,comport):  # Initialise with serial port details
+    def __init__(self, baud_rate, gui, comport):  # Initialise with serial port details
         QtCore.QThread.__init__(self)
         self.baud_rate = baud_rate
         self.data_out_queue = queue.Queue()
