@@ -33,3 +33,7 @@ jobs:
         with:
           # Directory containing source code & .spec file (optional requirements.txt).
           path: Application
+      - uses: actions/upload-artifact@v2
+        with:
+          name: name-of-artifact
+          path: Application/dist/linux
