@@ -27,13 +27,20 @@ jobs:
       - name: Make build executable
         run: chmod +x Application/build.sh
       - name: PyInstaller Linux
-        # You may pin to the exact commit or the version.
-        # uses: JackMcKew/pyinstaller-action-linux@38639c352a36917eea765f9283bfd1092c28af7b
         uses: JackMcKew/pyinstaller-action-linux@0.1.4
         with:
-          # Directory containing source code & .spec file (optional requirements.txt).
           path: Application
       - uses: actions/upload-artifact@v2
         with:
-          name: name-of-artifact
+          name: lock-in
           path: Application/dist/linux
+      - name: PyInstaller Windows
+      - uses: JackMcKew/pyinstaller-action-windows@v0.1.2
+        with:
+          path: Application
+      - uses: actions/upload-artifact@v2
+        with:
+          name: lock-in.exe
+          path: Application/dist/windows
+      
+
