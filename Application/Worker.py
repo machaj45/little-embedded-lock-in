@@ -123,7 +123,8 @@ class Worker(QtCore.QThread):
                     break
                 time.sleep(1)
             self.gui.data_done = False
-        self.gui.plainText.insertPlainText('Automatic Measurement is now complete!' + '\n')
+        self.gui.plainText.insertPlainText('Automatic Measurement is now complete!\n'
+                                           'Please save your data using Save as button!\n')
         self.gui.button_automatic_measurement.setText("Automatic Measurement")
         self.f = None
         if not self.stop:

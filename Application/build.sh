@@ -22,7 +22,7 @@ case "$(uname -s)" in
      rm -rf ./build
      rm -rf ./__pycache__
      rm  ./lock-in.spec
-
+     echo 'building for MS Windows DONE'
      ;;
 
    # Add here more strings to compare

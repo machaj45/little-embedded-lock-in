@@ -4,10 +4,12 @@
 import sys
 
 from PyQt5.QtGui import QPainter
+from PyQt5.QtCore import QTimer
 from PyQt5.QtWidgets import QDialog, QLineEdit, QPushButton, QApplication, QWidget, QGroupBox
 from PyQt5.QtWidgets import QVBoxLayout, QLabel, QHBoxLayout, QComboBox, QSlider, QFileDialog, QPlainTextEdit
 from PyQt5.QtCore import Qt
 from PyQt5 import QtGui
+from PyQt5 import QtSerialPort
 import math
 from SerialThread import SerialThread
 from Worker import Worker
@@ -23,7 +25,7 @@ from bs4 import BeautifulSoup
 import re
 
 
-class AnotherWindow(QWidget):
+class HelpWindow(QWidget):
 
     def __init__(self, icon):
         super().__init__()
@@ -48,8 +50,50 @@ class AnotherWindow(QWidget):
         painter.drawPixmap(0, 0, 410, 195, self.icon.pixmap(410, 195))
 
 
-class Form(QDialog):
+class PlotWindow(QWidget):
 
+    def __init__(self, gui):
+        super().__init__()
+        self.layout = QVBoxLayout()
+        self.setLayout(self.layout)
+        self.setWindowTitle("Plot")
+        self.graphWidget = pg.PlotWidget()
+        self.graphWidget.setMouseEnabled(x=False, y=False)
+        self.layout.addWidget(self.graphWidget)
+        self.gui = gui
+        self.timer = QTimer()
+        self.timer.timeout.connect(self._update)
+        self.timer.start(500)
+        self.plot_data_now = True
+
+    def _update(self):
+        if self.plot_data_now:
+            self.plot_data()
+            self.plot_data_now = False
+
+    def plot_data_set(self):
+        self.plot_data_now = True
+
+    def plot_data(self):
+        self.graphWidget.clear()
+        self.graphWidget.plot([x * 1 / self.gui.sf for x in range(0, len(self.gui.dut))], self.gui.dut,
+                              pen=pg.mkPen(color=(255, 0, 0)), name='dut')
+        self.graphWidget.plot([x * 1 / self.gui.sf for x in range(0, len(self.gui.ref))], self.gui.ref,
+                              pen=pg.mkPen(color=(0, 255, 0)), name='ref')
+        if self.gui.sin_square_mode:
+            self.graphWidget.plot([x * 1 / self.gui.sf for x in range(0, len(self.gui.X))], self.gui.X,
+                                  pen=pg.mkPen(color=(0, 100, 255), style=Qt.DotLine), name='U2')
+        if not self.gui.sin_square_mode:
+            self.graphWidget.plot([x * 1 / self.gui.sf for x in range(0, len(self.gui.ref90))], self.gui.ref90,
+                                  pen=pg.mkPen(color=(0, 100, 255)), name='ref90')
+        self.graphWidget.addLegend()
+        self.graphWidget.setMouseEnabled(x=True, y=True)
+
+
+class Form(QDialog):
+    def open_plot_window(self):
+        self.plot_window.show()
+        self.plot_window.plot_data_set()
     @staticmethod
     def get_online_versions():
         online_versions = []
@@ -81,11 +125,12 @@ class Form(QDialog):
                                            'https://github.com/machaj45/little-embedded-lock-in/releases' + '\n')
 
     def show_new_window(self):
-        self.w.show()
+        self.help_window.show()
 
     def closeEvent(self, event):
         self.serial_thread.running = False
-        self.w.close()
+        self.help_window.close()
+        self.plot_window.close()
         if self.serial_thread is not None and self.serial_thread.serial is not None:
             self.serial_thread.serial.close()
         self.reader.stop = True
@@ -97,10 +142,10 @@ class Form(QDialog):
             if 0 < a <= 130000:
                 self.qs_slider10.setValue(float(self.edit10.text()))
                 self.sf = int(self.sample_per_period * a)
-                st = self.select_st_for_sf()
+                self.st = self.select_st_for_sf()
                 self.label_spp.setText(
                     "Samples per period = {0} [-], Sampling frequency = {1} [Hz], Sampling Time = {2:.3f} [us]".format(
-                        int(self.sample_per_period), self.sf, st))
+                        int(self.sample_per_period), self.sf, self.st))
             else:
                 self.edit10.setText("1")
 
@@ -219,10 +264,10 @@ class Form(QDialog):
         self.acquired_data_Y = []
         ssp = float(2 ** i)
         self.sf = int(ssp * self.frequency_gen_1)
-        st = self.select_st_for_sf()
+        self.st = self.select_st_for_sf()
         self.label_spp.setText(
             "Samples per period = {0} [-], Sampling frequency = {1} [Hz], Sampling Time = {2:.3f} [us]".format(
-                int(ssp), self.sf, st))
+                int(ssp), self.sf, self.st))
 
     def send_command(self):
         self.button13.setEnabled(True)
@@ -276,17 +321,6 @@ class Form(QDialog):
             self.plainText.insertPlainText('No data to write to file ' + self.saveFileName + '\n')
         pass
 
-    def update_plot(self):
-        self.graphWidget.plot(range(0, len(self.acquired_data_YY)), self.acquired_data_YY,
-                              pen=pg.mkPen(color=(255, 0, 0)),
-                              name='dut')
-        self.graphWidget.plot(range(0, len(self.acquired_data_XX)), self.acquired_data_XX,
-                              pen=pg.mkPen(color=(0, 255, 0)),
-                              name='ref')
-        self.graphWidget.plot(range(0, len(self.acquired_data_ZZ)), self.acquired_data_ZZ,
-                              pen=pg.mkPen(color=(0, 100, 255)),
-                              name='ref90')
-
     def toggle(self):
         if not self.sin_square_mode:
             self.button_toggle_sin_square.setText("Toggle to Sin")
@@ -303,6 +337,7 @@ class Form(QDialog):
             self.square_calculation()
         else:
             self.dual_phase_decomposition()
+            self.plot_window.plot_data_set()
 
     def square_calculation(self):
         a = 0
@@ -552,23 +587,10 @@ class Form(QDialog):
         self.Phase.append(sa)
         self.reader.calculated = True
 
-    def plot_data(self):
-        self.graphWidget.clear()
-        self.graphWidget.plot([x * 1 / self.sf for x in range(0, len(self.dut))], self.dut,
-                              pen=pg.mkPen(color=(255, 0, 0)), name='dut')
-        self.graphWidget.plot([x * 1 / self.sf for x in range(0, len(self.ref))], self.ref,
-                              pen=pg.mkPen(color=(0, 255, 0)), name='ref')
-        if self.sin_square_mode:
-            self.graphWidget.plot([x * 1 / self.sf for x in range(0, len(self.X))], self.X,
-                                  pen=pg.mkPen(color=(0, 100, 255), style=Qt.DotLine), name='U2')
-        if not self.sin_square_mode:
-            self.graphWidget.plot([x * 1 / self.sf for x in range(0, len(self.ref90))], self.ref90,
-                                  pen=pg.mkPen(color=(0, 100, 255)), name='ref90')
-        self.graphWidget.addLegend()
-        self.graphWidget.setMouseEnabled(x=True, y=True)
+
 
     def start_stop_measurement(self):
-        self.graphWidget.clear()
+        self.plot_window.graphWidget.clear()
         if self.worker is None:
             self.worker = Worker(self, self.serial_thread)
         self.button_automatic_measurement.setText("Stop Measurement")
@@ -613,8 +635,10 @@ class Form(QDialog):
             return
         if not self.reader.con_flag:
             self.reader.con_flag = True
+            self.button_continuous.setText("Stop continuous")
         else:
             self.reader.con_flag_stop = True
+            self.button_continuous.setText("Continuous")
 
     def measure(self):
         self.reader.single_flag = True
@@ -644,7 +668,7 @@ class Form(QDialog):
         self.serial_thread.ser_out("1\n")
 
     def set_everything0(self):
-        self.graphWidget.setMouseEnabled(x=False, y=False)
+        self.plot_window.graphWidget.setMouseEnabled(x=False, y=False)
         self.data_bin = False
         self.serial_thread.send_all_counter = 0
         self.serial_thread.b = 0
@@ -667,7 +691,7 @@ class Form(QDialog):
         self.serial_thread.ser_out(self.edit10.text() + "\n")
 
     def set_everything1(self):
-        self.graphWidget.setMouseEnabled(x=False, y=False)
+        self.plot_window.graphWidget.setMouseEnabled(x=False, y=False)
         self.text = []
         self.serial_thread.send_all_counter = 0
         self.button23.setEnabled(False)
@@ -698,7 +722,8 @@ class Form(QDialog):
                     self.plainText.insertPlainText(self.text_to_update_3 + '\n')
                 self.last_text = self.text_to_update_3
         except RuntimeError:
-            self.plainText.insertPlainText('RuntimeError in update_text' + '\n')
+            if self.plainText is not None:
+                self.plainText.insertPlainText('RuntimeError in update_text' + '\n')
             pass
 
     def __init__(self, parent=None):
@@ -724,7 +749,8 @@ class Form(QDialog):
             datafile = "icon.ico/icon.ico"
             datafile = os.path.join(sys.prefix, datafile)
         self.icon = QtGui.QIcon(datafile)
-        self.w = AnotherWindow(self.icon)
+        self.help_window = HelpWindow(self.icon)
+        self.plot_window = PlotWindow(self)
         self.setWindowIcon(self.icon)
         self.setWindowFlag(Qt.WindowContextHelpButtonHint, False)
         self.gui_version = 'v1.0.2'
@@ -903,6 +929,7 @@ class Form(QDialog):
         self.button20.clicked.connect(self.start1)
         self.button21.clicked.connect(self.stop1)
         self.button22.clicked.connect(self.sweep1)
+        self.st = 1
         self.button23.clicked.connect(self.set_everything1)
         self.label_xy = QLabel("XY")
         font1 = self.font()
@@ -930,16 +957,15 @@ class Form(QDialog):
         self.layout_main_vertical.addLayout(self.layout_horizontal_gen)
         self.label_spp = QLabel("Samples per period")
         self.button_spp = QPushButton("Set Samples per period")
-        self.graphWidget = pg.PlotWidget()
-        self.graphWidget.setMouseEnabled(x=False, y=False)
-        self.hist = pg.HistogramLUTItem()
+
+
         self.button_load = QPushButton("Load")
         self.button_toggle_sin_square = QPushButton("Toggle to Square")
         self.button_draw_data = QPushButton("Draw data")
         self.button_load.setEnabled(True)
         self.button_toggle_sin_square.setEnabled(True)
         self.button_automatic_measurement = QPushButton("Automatic Measurement")
-        self.button_save_as = QPushButton("Save As")
+        self.button_save_as = QPushButton("Save as")
         self.button_send_command = QPushButton("Send command")
         self.button_continuous = QPushButton("Continuous")
         self.button_single = QPushButton("Single")
@@ -947,7 +973,7 @@ class Form(QDialog):
         self.button_single.clicked.connect(self.measure)
         self.button_load.clicked.connect(self.load_button)
         self.button_toggle_sin_square.clicked.connect(self.toggle)
-        self.button_draw_data.clicked.connect(self.plot_data)
+        self.button_draw_data.clicked.connect(self.open_plot_window)
         self.button_automatic_measurement.clicked.connect(self.start_stop_measurement)
         self.button_save_as.clicked.connect(self.save_file_dialog)
         self.button_send_command.clicked.connect(self.send_command)
@@ -973,7 +999,8 @@ class Form(QDialog):
 
         self.layout_vertical_output.addWidget(self.label_xy)
         self.layout_vertical_output.addWidget(self.label_xy_2)
-        self.layout_vertical_output.addWidget(self.graphWidget)
+
+
 
         self.layout_horizontal_bottom.addWidget(self.button_continuous)
         self.layout_horizontal_bottom.addWidget(self.button_single)

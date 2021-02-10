@@ -83,7 +83,7 @@ class SerialThread(QtCore.QThread):
             a = int(3300 * (float(self.gui.text[1][:-1]) / (2 ** 12))) + 1
         self.gui.label16.setText("Offset - {0} mV".format(a))
         self.gui.label11.setText("Frequency - {0} Hz".format(self.gui.text[2][:-1]))
-        self.gui.frequency_gen_1 = float(self.gui.text[0][:-1])
+        self.gui.frequency_gen_1 = float(self.gui.text[2][:-1])
         self.gui.button13.setEnabled(True)
 
     def set_right_gen_gui(self):
