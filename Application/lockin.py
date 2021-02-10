@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import sys
-from PyQt5.QtWidgets import QDialog, QLineEdit, QPushButton, QApplication
+from PyQt5.QtWidgets import QDialog, QLineEdit, QPushButton, QApplication, QWidget
 from PyQt5.QtWidgets import QVBoxLayout, QLabel, QHBoxLayout, QComboBox, QSlider, QFileDialog, QPlainTextEdit
 from PyQt5.QtCore import Qt
 from PyQt5 import QtGui
@@ -16,12 +16,64 @@ import csv
 import time
 import numpy as np
 import os
+import urllib.request
+from bs4 import BeautifulSoup
+import re
+
+
+class AnotherWindow(QWidget):
+    """
+    This "window" is a QWidget. If it has no parent, it
+    will appear as a free-floating window as we want.
+    """
+
+    def __init__(self):
+        super().__init__()
+        layout = QVBoxLayout()
+        self.label = QLabel("Another Window")
+        layout.addWidget(self.label)
+        self.setLayout(layout)
 
 
 class Form(QDialog):
+
+    @staticmethod
+    def get_online_versions():
+        online_versions = []
+        url = "https://github.com/machaj45/little-embedded-lock-in/tags"
+        try:
+            file = urllib.request.urlopen(url, timeout=1)
+        except urllib.error.URLError as e:
+            print(e)
+            return online_versions
+            pass
+        soup = BeautifulSoup(file, 'html.parser')
+        for div in soup.find_all('div', {'class': 'Box-row position-relative d-flex'}):
+            for a in div.find_all('a', {'class': ''}):
+                for reg in re.findall(r'v\d.*\d.*\d', str(a)):
+                    if reg not in online_versions:
+                        online_versions.append(reg)
+        return online_versions
+
+    def automatic_update_check(self):
+        online_versions = self.get_online_versions()
+        if len(online_versions) == 0:
+            self.plainText.insertPlainText('Unable to check version!' + '\n')
+            return
+        if self.gui_version == online_versions[0]:
+            self.plainText.insertPlainText('Application is update!\t version: ' + self.gui_version + '\n')
+        else:
+            self.plainText.insertPlainText('Application needs to be updated!' + '\n')
+            self.plainText.insertPlainText('Please download newer version from:\n' +
+                                           'https://github.com/machaj45/little-embedded-lock-in/releases' + '\n')
+
+    def show_new_window(self):
+        self.w.show()
+
     def closeEvent(self, event):
         self.serial_thread.running = False
-        if self.serial_thread.serial is not None:
+        self.w.close()
+        if self.serial_thread is not None and self.serial_thread.serial is not None:
             self.serial_thread.serial.close()
         self.reader.stop = True
         print('Window closed')
@@ -113,7 +165,7 @@ class Form(QDialog):
         self.running = False
         self.serial_thread.running = False
         time.sleep(0.4)
-        self.serial_thread = SerialThread(115200, self,available_ports[self.selected_comport])
+        self.serial_thread = SerialThread(115200, self, available_ports[self.selected_comport])
         self.running = True
         self.serial_thread.start()
         self.reader.serial_thread = self.serial_thread
@@ -625,15 +677,17 @@ class Form(QDialog):
                 self.plainText.verticalScrollBar().setValue(self.plainText.verticalScrollBar().maximum() - 1)
                 self.last_vertical_maximum = self.plainText.verticalScrollBar().maximum()
             if self.last_text != self.text_to_update_3 and self.plainText is not None:
-                self.plainText.insertPlainText(self.text_to_update_3 + '\n')
+                if self.text_to_update_3 != "":
+                    self.plainText.insertPlainText(self.text_to_update_3 + '\n')
                 self.last_text = self.text_to_update_3
         except RuntimeError:
             self.gui.plainText.insertPlainText('RuntimeError in update_text' + '\n')
             pass
 
     def __init__(self, parent=None):
+        self.w = AnotherWindow()
         self.selected_comport = 0
-        self.serial_thread = SerialThread(115200, self,None)  # Start serial thread
+        self.serial_thread = SerialThread(115200, self, None)  # Start serial thread
         self.serial_thread.start()
         # Start worker thread
         self.reader = Reader(self, self.serial_thread)  # Start reading thread
@@ -659,7 +713,8 @@ class Form(QDialog):
 
         self.setWindowIcon(QtGui.QIcon(datafile))
         self.setWindowFlag(Qt.WindowContextHelpButtonHint, False)
-
+        self.gui_version = 'v1.0.1'
+        self.fir_version = 1
         self.loadFileName = 'frec.csv'
         self.saveFileName = 'data.csv'
         self.worker = None
@@ -840,11 +895,14 @@ class Form(QDialog):
         self.button_connect = QPushButton("Connect")
         self.button_scan.clicked.connect(self.scan)
         self.button_connect.clicked.connect(self.connect)
+        self.button_help = QPushButton("Help")
+        self.button_help.clicked.connect(self.show_new_window)
 
         self.layout_main_vertical.addWidget(self.drop_down_comports)
         self.drop_down_comports.currentIndexChanged.connect(self.comports)
         self.layout_horizontal_connect.addWidget(self.button_scan)
         self.layout_horizontal_connect.addWidget(self.button_connect)
+        self.layout_horizontal_connect.addWidget(self.button_help)
         self.layout_main_vertical.addLayout(self.layout_horizontal_connect)
         self.layout_horizontal_gen.addLayout(self.layout_vertical_left_gen)
         self.layout_horizontal_gen.addLayout(self.layout_vertical_right_gen)
@@ -899,8 +957,8 @@ class Form(QDialog):
         self.e25()
         self.e26()
         self.plainText = QPlainTextEdit(self)
-        self.plainText.insertPlainText("Program Start.\n")
         self.layout_main_vertical.addWidget(self.plainText)
+        self.automatic_update_check()
 
 
 app = QApplication([])
