@@ -35,7 +35,7 @@ jobs:
           name: lock-in
           path: Application/dist/linux
       - name: PyInstaller Windows
-      - uses: JackMcKew/pyinstaller-action-windows@v0.1.2
+        uses: JackMcKew/pyinstaller-action-windows@v0.1.2
         with:
           path: Application
       - uses: actions/upload-artifact@v2
