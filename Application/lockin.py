@@ -751,7 +751,7 @@ class Form(QDialog):
         self.plot_window = PlotWindow(self)
         self.setWindowIcon(self.icon)
         self.setWindowFlag(Qt.WindowContextHelpButtonHint, False)
-        self.gui_version = 'v1.0.3'
+        self.gui_version = 'v1.0.4'
         self.fir_version = 'nop'
         self.loadFileName = 'frec.csv'
         self.saveFileName = 'data.csv'
