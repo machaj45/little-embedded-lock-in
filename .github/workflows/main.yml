@@ -42,19 +42,18 @@ jobs:
         with:
           name: lock-in.exe
           path: Application/dist/windows
-      - name: Create Release Folder src
-        run: rsync -arv --exclude='.git/' --exclude='.github/' --exclude='.gitignore' . ./release
-      - name: Create Release Folder bin linux
-        run: rsync -arv ./Application/dist/linux/lock-in ./release/bin/
-      - name: Create Release Folder bin windows
-        run: rsync -arv ./Application/dist/windows/lock-in.exe ./release/bin
-      - name: Switch to Release Folder
-        run: |
-          cd release
-          ls -la
-      - name: Bump version and push tag
-        uses: anothrNick/github-tag-action@master
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          REPO_OWNER: machaj45
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # This token is provided by Actions, you do not need to create your own token
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: Release ${{ github.ref }}
+          body: |
+            Changes in this Release
+            - First Change
+            - Second Change
+          draft: false
+          prerelease: false
 
