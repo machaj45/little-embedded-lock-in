@@ -23,26 +23,14 @@ jobs:
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v2
-
-      # Runs a single command using the runners shell
-      - name: Make build executable
-        run: chmod +x Application/build.sh
-      - name: PyInstaller Linux
+      - name: Build gui for Linux
         uses: JackMcKew/pyinstaller-action-linux@0.1.4
         with:
           path: Application
-      - uses: actions/upload-artifact@v2
-        with:
-          name: lock-in
-          path: Application/dist/linux
-      - name: PyInstaller Windows
+      - name: Build gui for Windows
         uses: JackMcKew/pyinstaller-action-windows@v0.1.2
         with:
           path: Application
-      - uses: actions/upload-artifact@v2
-        with:
-          name: lock-in.exe
-          path: Application/dist/windows
       - name: Create Release
         id: create_release
         uses: actions/create-release@v1
@@ -53,8 +41,37 @@ jobs:
           release_name: Release ${{ github.ref }}
           body: |
             Changes in this Release
-            - First Change
-            - Second Change
+            - Bug fixes
+            - Adding new functionalities
           draft: false
           prerelease: false
-
+      - name: Upload Release Asset Windows
+        id: upload-release-asset-windows 
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps 
+          asset_path: ./Application/dist/windows/lock-in.exe
+          asset_name: lock-in.exe
+          asset_content_type: ./
+      - name: Upload Release Asset Linux
+        id: upload-release-asset-linux
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps 
+          asset_path: ./Application/dist/linux/lock-in
+          asset_name: lock-in
+          asset_content_type: ./
+      - name: Upload Release Asset Firmware
+        id: upload-release-asset-firmware
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps 
+          asset_path: ./Firmware/Debug/lock-in.bin
+          asset_name: lock-in.bin
+          asset_content_type: ./
