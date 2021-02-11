@@ -25,7 +25,6 @@ class Worker(QtCore.QThread):
         self.running = False
         self.gui.plainText.insertPlainText('User ended automatic measurement' + '\n')
 
-
     def run(self):
         self.running = True
         self.stop = False

@@ -11,10 +11,28 @@ class HelpWindow(QWidget):
     def __init__(self, icon):
         super().__init__()
         layout = QVBoxLayout()
-        self.label = QLabel("Another Window")
+        self.label = QLabel("This is help to lock-in amplifier that was created by Jan Machálek,\n"
+                            "as part of my Diploma Thesis. There is two mods to select from sin mode and rect mode\n"
+                            "In sin mode you get gain and phase in rect mod you get gain and output voltage.\n"
+                            "How to start?\n"
+                            "1) you have to connect device with right firmware.\n"
+                            "2) then you have to set up generator on channel one.\n"
+                            "3) you have to select number of samples per period\n"
+                            "4) you can select continuous or single measurement\n"
+                            "   or you can use automatic measurement\n"
+                            "   this option opens dialog to specify csv file with\n"
+                            "   frequencies that you want to measure on.\n"
+                            "   after automatic measurements is completed you can\n"
+                            "   use save as button to save data that has been measured.\n"
+                            "\n"
+                            "How to select another lock-in?"
+                            "You can use scan button that will update dropdown at the top\n"
+                            "of application then you can select comport that you want\n"
+                            "and then connect to that port using connect button.")
         layout.addWidget(self.label)
         self.setLayout(layout)
         self.icon = icon
+        self.setWindowIcon(self.icon)
 
         datafile = "data/hi_res_icon.png"
         if not hasattr(sys, "frozen"):

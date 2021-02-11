@@ -24,6 +24,7 @@ class SerialThread(QtCore.QThread):
         self.available_ports = []
         self.counter_of_dnr_answers = 0
         self.data = 0
+        self.gui.data_bin = False
 
     @staticmethod
     def str_bytes(s):
@@ -76,24 +77,24 @@ class SerialThread(QtCore.QThread):
     def set_left_gen_gui(self):
         self.gui.label_amplitude_left.setText("Amplitude - {0} %, Upp = {1} mV".format(self.gui.text[0][:-2], int(
             3300 * (float(self.gui.text[0][:-2]) / 100))))
-        a = int(3300 * (float(self.gui.text[1][:-1]) / (2 ** 12)))
+        a = int(3300 * (float(self.gui.text[2][:-1]) / (2 ** 12)))
         if a == 0:
             a = 0
         else:
-            a = int(3300 * (float(self.gui.text[1][:-1]) / (2 ** 12))) + 1
+            a = int(3300 * (float(self.gui.text[2][:-1]) / (2 ** 12))) + 1
         self.gui.label_offset_left.setText("Offset - {0} mV".format(a))
-        self.gui.label_frequency_left.setText("Frequency - {0} Hz".format(self.gui.text[2][:-1]))
-        self.gui.frequency_gen_1 = float(self.gui.text[2][:-1])
+        self.gui.label_frequency_left.setText("Frequency - {0} Hz".format(self.gui.text[1][:-1]))
+        self.gui.frequency_gen_1 = float(self.gui.text[1][:-1])
         self.gui.button_setup_left.setEnabled(True)
 
     def set_right_gen_gui(self):
         self.gui.label25.setText("Amplitude - {0} %, Upp = {1} mV".format(self.gui.text[0][:-2], int(
             3300 * (float(self.gui.text[0][:-2]) / 100))))
-        a = int(3300 * (int(self.gui.text[1][:-1]) / (2 ** 12))) + 1
+        a = int(3300 * (float(self.gui.text[2][:-1]) / (2 ** 12))) + 1
         if a == 1:
             a = 0
         self.gui.label26.setText("Offset - {0} mV".format(a))
-        self.gui.label21.setText("Frequency - {0} Hz".format(self.gui.text[2][:-1]))
+        self.gui.label21.setText("Frequency - {0} Hz".format(self.gui.text[1][:-1]))
         self.gui.button23.setEnabled(True)
 
     def asci_mode(self, s, txd):
@@ -213,21 +214,20 @@ class SerialThread(QtCore.QThread):
                 self.comport = self.serial.port
             else:
                 self.gui.button_setup_left.setEnabled(True)
+            if self.count > 1:
+                self.gui.plainText.undo()
             self.gui.plainText.insertPlainText(
                 'Not Connected,\t attempting to connect number {0}\n'.format(self.count))
             self.count = self.count + 1
             if self.count > 10:
                 self.serial.close()
                 self.initialize_run_method()
-                self.gui.plainText.insertPlainText(
-                    'Not Connected,\t resetting serial  \n')
 
             if t_comport is not None:
                 self.serial.port = t_comport
                 self.comport = t_comport
             else:
                 self.serial.port = self.comport
-        txt = ''
         if self.check():
             self.gui.plainText.insertPlainText("Connected to %s at %u baud" % (self.serial.port, self.baud_rate) + '\n')
             txt = "Available  port are: "

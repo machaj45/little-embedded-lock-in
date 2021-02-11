@@ -19,6 +19,7 @@ import numpy as np
 import os
 import urllib.request
 from bs4 import BeautifulSoup
+import socket
 import re
 
 
@@ -34,6 +35,10 @@ class MainWindow(QDialog):
         try:
             file = urllib.request.urlopen(url, timeout=1)
         except urllib.error.URLError as e:
+            print(e)
+            return online_versions
+            pass
+        except socket.timeout as e:
             print(e)
             return online_versions
             pass
@@ -278,7 +283,6 @@ class MainWindow(QDialog):
             time.sleep(0.2)
             a = a + 1
             self.text_to_update = 'no data ' + str(a)
-        self.label24.setText('LENGTH ' + str(len(self.acquired_data_Y)))
 
         my = statistics.mean(self.acquired_data_Y)
         mx = 0
@@ -555,9 +559,12 @@ class MainWindow(QDialog):
         for i in range(0, len(self.Gain)):
             one_row_list = [self.Freq[i], self.Gain[i], self.Phase[i]]
             row_list.append(one_row_list)
-        with open(self.saveFileName, 'w', newline='') as file:
-            writer = csv.writer(file)
-            writer.writerows(row_list)
+        try:
+            with open(self.saveFileName, 'w', newline='') as file:
+                writer = csv.writer(file)
+                writer.writerows(row_list)
+        except FileNotFoundError as e:
+            self.text_to_update_3 = str(e)
         pass
 
     def read(self):
@@ -576,10 +583,27 @@ class MainWindow(QDialog):
     def start_left_gen(self):
         self.serial_thread.ser_out("START\n")
         self.serial_thread.ser_out("0\n")
+        time.sleep(0.5)
+        self.serial_thread.ser_out("OFFS\n")
+        self.serial_thread.ser_out("0\n")
+        a = (int(self.edit_offset_left.text()) / 3300) * (2 ** 12)
+        if a >= 4095:
+            a = 4095
+        if a <= 0:
+            a = 5000  # this is special case for zero
+        self.serial_thread.ser_out(str(int(a)) + "\n")
 
     def start1(self):
         self.serial_thread.ser_out("START\n")
         self.serial_thread.ser_out("1\n")
+        self.serial_thread.ser_out("OFFS\n")
+        self.serial_thread.ser_out("1\n")
+        a = (int(self.edit26.text()) / 3300) * (2 ** 12)
+        if a <= 0:
+            a = 1
+        if a >= 4095:
+            a = 4095
+        self.serial_thread.ser_out(str(int(a)) + "\n")
 
     def stop_left_gen(self):
         self.serial_thread.ser_out("STOP\n")
@@ -608,17 +632,17 @@ class MainWindow(QDialog):
         self.serial_thread.ser_out("AMPL\n")
         self.serial_thread.ser_out("0\n")
         self.serial_thread.ser_out(self.edit_amplitude_left.text() + "\n")
+        self.serial_thread.ser_out("FRQ!\n")
+        self.serial_thread.ser_out("0\n")
+        self.serial_thread.ser_out(self.edit_frequency_left.text() + "\n")
         self.serial_thread.ser_out("OFFS\n")
         self.serial_thread.ser_out("0\n")
         a = (int(self.edit_offset_left.text()) / 3300) * (2 ** 12)
         if a >= 4095:
             a = 4095
         if a <= 0:
-            a = 5000
+            a = 5000  # this is special case for zero
         self.serial_thread.ser_out(str(int(a)) + "\n")
-        self.serial_thread.ser_out("FRQ!\n")
-        self.serial_thread.ser_out("0\n")
-        self.serial_thread.ser_out(self.edit_frequency_left.text() + "\n")
 
     def set_everything1(self):
         self.plot_window.graphWidget.setMouseEnabled(x=False, y=False)
@@ -628,6 +652,9 @@ class MainWindow(QDialog):
         self.serial_thread.ser_out("AMPL\n")
         self.serial_thread.ser_out("1\n")
         self.serial_thread.ser_out(self.edit25.text() + "\n")
+        self.serial_thread.ser_out("FRQ!\n")
+        self.serial_thread.ser_out("1\n")
+        self.serial_thread.ser_out(self.edit20.text() + "\n")
         self.serial_thread.ser_out("OFFS\n")
         self.serial_thread.ser_out("1\n")
         a = (int(self.edit26.text()) / 3300) * (2 ** 12)
@@ -636,9 +663,6 @@ class MainWindow(QDialog):
         if a >= 4095:
             a = 4095
         self.serial_thread.ser_out(str(int(a)) + "\n")
-        self.serial_thread.ser_out("FRQ!\n")
-        self.serial_thread.ser_out("1\n")
-        self.serial_thread.ser_out(self.edit20.text() + "\n")
 
     def update_text(self):
         try:
@@ -651,10 +675,8 @@ class MainWindow(QDialog):
                 if self.text_to_update_3 != "":
                     self.plainText.insertPlainText(self.text_to_update_3 + '\n')
                 self.last_text = self.text_to_update_3
-        except RuntimeError:
-            if self.plainText is not None:
-                self.plainText.insertPlainText('RuntimeError in update_text' + '\n')
-            pass
+        except RuntimeError as a:
+            print(a)
 
     def __init__(self, parent=None):
 

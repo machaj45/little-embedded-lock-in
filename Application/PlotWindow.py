@@ -3,6 +3,7 @@ from PyQt5.QtCore import QTimer
 from PyQt5.QtWidgets import QWidget, QVBoxLayout
 import pyqtgraph
 
+
 class PlotWindow(QWidget):
 
     def __init__(self, gui):
@@ -18,6 +19,7 @@ class PlotWindow(QWidget):
         self.timer.timeout.connect(self._update)
         self.timer.start(500)
         self.plot_data_now = True
+        self.setWindowIcon(self.gui.icon)
 
     def _update(self):
         if self.plot_data_now:

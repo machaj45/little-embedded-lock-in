@@ -58,7 +58,7 @@ class Reader(QtCore.QThread):
 
     def reset_serial_thread(self):
         if self.serial_thread.serial is None and not self.in_scan_mode:
-            self.serial_thread = SerialThread(115200, self.gui,None)  # Start serial thread
+            self.serial_thread = SerialThread(115200, self.gui, None)  # Start serial thread
             self.serial_thread.start()
             self.gui.serial_thread = self.serial_thread
         pass

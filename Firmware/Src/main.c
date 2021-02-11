@@ -606,7 +606,7 @@ void setFrequency(int newinput){
 			posintable1=0;
 			timReconfigureForGenerator(genFreq[0],0,&realFreq1);
 			HAL_DAC_Start_DMA(&hdac1,DAC_CHANNEL_1, (uint32_t*)genBuffer1,bufferSize1, DAC_ALIGN_12B_R);
-			pr("%.3f\n",(float)realFreq1/(float)bufferSize1);
+			pr("%.5f\n",(float)realFreq1/(float)bufferSize1);
 			//pr("%d\n\r",newinput);
 			//setAmpl(scale0);
 		}
@@ -623,7 +623,7 @@ void setFrequency(int newinput){
 			HAL_DAC_Start_DMA(&hdac1,DAC_CHANNEL_2, (uint32_t*)genBuffer2,bufferSize2, DAC_ALIGN_12B_R);
 			timReconfigureForGenerator(genFreq[1],1,&realFreq2);
 			//pr("%d\n\r",newinput);
-			pr("%.3f\n",(float)realFreq2/(float)bufferSize2);
+			pr("%.5f\n",(float)realFreq2/(float)bufferSize2);
 		}
 	}
 }
