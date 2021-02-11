@@ -79,7 +79,7 @@ class Worker(QtCore.QThread):
             i = i + 1
             self.serial_thread.ser_out("OFFS\n")
             self.serial_thread.ser_out("0\n")
-            a = (int(self.gui.edit16.text()) / 3300) * (2 ** 12)
+            a = (int(self.gui.edit_offset_left.text()) / 3300) * (2 ** 12)
             if a <= 0:
                 a = 1
             if a >= 4095:

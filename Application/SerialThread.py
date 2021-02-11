@@ -74,17 +74,17 @@ class SerialThread(QtCore.QThread):
         return self.available_ports
 
     def set_left_gen_gui(self):
-        self.gui.label15.setText("Amplitude - {0} %, Upp = {1} mV".format(self.gui.text[0][:-2], int(
+        self.gui.label_amplitude_left.setText("Amplitude - {0} %, Upp = {1} mV".format(self.gui.text[0][:-2], int(
             3300 * (float(self.gui.text[0][:-2]) / 100))))
         a = int(3300 * (float(self.gui.text[1][:-1]) / (2 ** 12)))
         if a == 0:
             a = 0
         else:
             a = int(3300 * (float(self.gui.text[1][:-1]) / (2 ** 12))) + 1
-        self.gui.label16.setText("Offset - {0} mV".format(a))
-        self.gui.label11.setText("Frequency - {0} Hz".format(self.gui.text[2][:-1]))
+        self.gui.label_offset_left.setText("Offset - {0} mV".format(a))
+        self.gui.label_frequency_left.setText("Frequency - {0} Hz".format(self.gui.text[2][:-1]))
         self.gui.frequency_gen_1 = float(self.gui.text[2][:-1])
-        self.gui.button13.setEnabled(True)
+        self.gui.button_setup_left.setEnabled(True)
 
     def set_right_gen_gui(self):
         self.gui.label25.setText("Amplitude - {0} %, Upp = {1} mV".format(self.gui.text[0][:-2], int(
@@ -127,9 +127,9 @@ class SerialThread(QtCore.QThread):
 
         if self.send_all_counter == 3:
             self.send_all_counter = 0
-            if self.gui.button23.isEnabled() and not self.gui.button13.isEnabled():
+            if self.gui.button23.isEnabled() and not self.gui.button_setup_left.isEnabled():
                 self.set_left_gen_gui()
-            elif self.gui.button13.isEnabled() and not self.gui.button23.isEnabled():
+            elif self.gui.button_setup_left.isEnabled() and not self.gui.button23.isEnabled():
                 self.set_right_gen_gui()
             self.gui.text = []
 
@@ -212,7 +212,7 @@ class SerialThread(QtCore.QThread):
                 self.serial.port = self.available_ports[0]
                 self.comport = self.serial.port
             else:
-                self.gui.button13.setEnabled(True)
+                self.gui.button_setup_left.setEnabled(True)
             self.gui.plainText.insertPlainText(
                 'Not Connected,\t attempting to connect number {0}\n'.format(self.count))
             self.count = self.count + 1
@@ -265,7 +265,7 @@ class SerialThread(QtCore.QThread):
             except serial.serialutil.SerialException:
                 self.gui.plainText.insertPlainText("SerialException in running enabling send all \
                                                         button and waiting\n")
-                self.gui.button13.setEnabled(True)
+                self.gui.button_setup_left.setEnabled(True)
                 self.serial.close()
                 self.running = False
                 self.available_ports = []

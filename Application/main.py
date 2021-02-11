@@ -4,7 +4,7 @@
 import sys
 from PyQt5.QtWidgets import QApplication, QLabel, QPushButton, QMainWindow
 from PyQt5.QtCore import Qt
-from lockin import Form
+from lockin import MainWindow
 
 
 class LockInHandler:
@@ -13,7 +13,7 @@ class LockInHandler:
 
     def create_lock_in(self):
         if len(self.windows) <= 1:
-            self.windows.append(Form())
+            self.windows.append(MainWindow())
             self.windows[-1].show()
             print(len(self.windows))
 

@@ -2,17 +2,16 @@
 # -*- coding: utf-8 -*-
 
 import sys
-from PyQt5.QtGui import QPainter
-from PyQt5.QtCore import QTimer
-from PyQt5.QtWidgets import QDialog, QLineEdit, QPushButton, QApplication, QWidget, QGroupBox
+from PyQt5.QtWidgets import QDialog, QLineEdit, QPushButton, QApplication, QGroupBox
 from PyQt5.QtWidgets import QVBoxLayout, QLabel, QHBoxLayout, QComboBox, QSlider, QFileDialog, QPlainTextEdit
 from PyQt5.QtCore import Qt
 from PyQt5 import QtGui
 import math
+from HelpWindow import HelpWindow
+from PlotWindow import PlotWindow
 from SerialThread import SerialThread
 from Worker import Worker
 from Reader import Reader
-import pyqtgraph as pg
 import statistics
 import csv
 import time
@@ -23,75 +22,11 @@ from bs4 import BeautifulSoup
 import re
 
 
-class HelpWindow(QWidget):
-
-    def __init__(self, icon):
-        super().__init__()
-        layout = QVBoxLayout()
-        self.label = QLabel("Another Window")
-        layout.addWidget(self.label)
-        self.setLayout(layout)
-        self.icon = icon
-
-        datafile = "data/hi_res_icon.png"
-        if not hasattr(sys, "frozen"):
-            datafile = os.path.join(os.path.dirname(__file__), datafile)
-        else:
-            datafile = "hi_res_icon.png/hi_res_icon.png"
-            datafile = os.path.join(sys.prefix, datafile)
-        self.icon = QtGui.QIcon(datafile)
-        self.setFixedSize(410, 600)
-        self.setWindowTitle("Help for Lock-in Amplifier")
-
-    def paintEvent(self, event):
-        painter = QPainter(self)
-        painter.drawPixmap(0, 0, 410, 195, self.icon.pixmap(410, 195))
-
-
-class PlotWindow(QWidget):
-
-    def __init__(self, gui):
-        super().__init__()
-        self.layout = QVBoxLayout()
-        self.setLayout(self.layout)
-        self.setWindowTitle("Plot")
-        self.graphWidget = pg.PlotWidget()
-        self.graphWidget.setMouseEnabled(x=False, y=False)
-        self.layout.addWidget(self.graphWidget)
-        self.gui = gui
-        self.timer = QTimer()
-        self.timer.timeout.connect(self._update)
-        self.timer.start(500)
-        self.plot_data_now = True
-
-    def _update(self):
-        if self.plot_data_now:
-            self.plot_data()
-            self.plot_data_now = False
-
-    def plot_data_set(self):
-        self.plot_data_now = True
-
-    def plot_data(self):
-        self.graphWidget.clear()
-        self.graphWidget.plot([x * 1 / self.gui.sf for x in range(0, len(self.gui.dut))], self.gui.dut,
-                              pen=pg.mkPen(color=(255, 0, 0)), name='dut')
-        self.graphWidget.plot([x * 1 / self.gui.sf for x in range(0, len(self.gui.ref))], self.gui.ref,
-                              pen=pg.mkPen(color=(0, 255, 0)), name='ref')
-        if self.gui.sin_square_mode:
-            self.graphWidget.plot([x * 1 / self.gui.sf for x in range(0, len(self.gui.X))], self.gui.X,
-                                  pen=pg.mkPen(color=(0, 100, 255), style=Qt.DotLine), name='U2')
-        if not self.gui.sin_square_mode:
-            self.graphWidget.plot([x * 1 / self.gui.sf for x in range(0, len(self.gui.ref90))], self.gui.ref90,
-                                  pen=pg.mkPen(color=(0, 100, 255)), name='ref90')
-        self.graphWidget.addLegend()
-        self.graphWidget.setMouseEnabled(x=True, y=True)
-
-
-class Form(QDialog):
+class MainWindow(QDialog):
     def open_plot_window(self):
         self.plot_window.show()
         self.plot_window.plot_data_set()
+
     @staticmethod
     def get_online_versions():
         online_versions = []
@@ -134,34 +69,34 @@ class Form(QDialog):
         self.reader.stop = True
         print('Window closed')
 
-    def e10(self):
-        if self.edit10.text() != "":
-            a = float(self.edit10.text())
+    def on_edit_change_frequency_left(self):
+        if self.edit_frequency_left.text() != "":
+            a = float(self.edit_frequency_left.text())
             if 0 < a <= 130000:
-                self.qs_slider10.setValue(float(self.edit10.text()))
+                self.slider_frequency_left.setValue(float(self.edit_frequency_left.text()))
                 self.sf = int(self.sample_per_period * a)
                 self.st = self.select_st_for_sf()
                 self.label_spp.setText(
                     "Samples per period = {0} [-], Sampling frequency = {1} [Hz], Sampling Time = {2:.3f} [us]".format(
                         int(self.sample_per_period), self.sf, self.st))
             else:
-                self.edit10.setText("1")
+                self.edit_frequency_left.setText("1")
 
-    def e15(self):
-        if self.edit15.text() != "":
-            a = int(self.edit15.text())
+    def on_edit_change_amplitude_left(self):
+        if self.edit_amplitude_left.text() != "":
+            a = int(self.edit_amplitude_left.text())
             if 0 < a <= 100:
-                self.qs_slider15.setValue(int(self.edit15.text()))
+                self.slider_amplitude_left.setValue(int(self.edit_amplitude_left.text()))
             else:
-                self.edit15.setText("1")
+                self.edit_amplitude_left.setText("1")
 
-    def e16(self):
-        if self.edit16.text() != "":
-            a = int(self.edit16.text())
+    def on_edit_change_offset_left(self):
+        if self.edit_offset_left.text() != "":
+            a = int(self.edit_offset_left.text())
             if 0 < a <= 3300:
-                self.qs_slider16.setValue(int(self.edit16.text()))
+                self.slider_offset_left.setValue(int(self.edit_offset_left.text()))
             else:
-                self.edit16.setText("1")
+                self.edit_offset_left.setText("1")
 
     def e20(self):
         if self.edit20.text() != "":
@@ -187,16 +122,16 @@ class Form(QDialog):
             else:
                 self.edit26.setText("1")
 
-    def slider_update_10(self, value):
-        self.edit10.setText(str(value))
+    def on_slider_change_frequency_left(self, value):
+        self.edit_frequency_left.setText(str(value))
         pass
 
-    def slider_update_15(self, value):
-        self.edit15.setText(str(value))
+    def on_slider_change_amplitude_left(self, value):
+        self.edit_amplitude_left.setText(str(value))
         pass
 
-    def slider_update_16(self, value):
-        self.edit16.setText(str(value))
+    def on_slider_change_offset_left(self, value):
+        self.edit_offset_left.setText(str(value))
         pass
 
     def slider_update_20(self, value):
@@ -268,7 +203,7 @@ class Form(QDialog):
                 int(ssp), self.sf, self.st))
 
     def send_command(self):
-        self.button13.setEnabled(True)
+        self.button_setup_left.setEnabled(True)
         self.button23.setEnabled(True)
         self.serial_thread.ser_out(self.edit27.text() + "\n")
 
@@ -312,7 +247,7 @@ class Form(QDialog):
         if file_name:
             self.saveFileName = file_name
         # print(file_name)
-        if len(self.Freq)>0:
+        if len(self.Freq) > 0:
             self.save()
             self.plainText.insertPlainText('Data has been saved in to ' + self.saveFileName + '\n')
         else:
@@ -328,7 +263,7 @@ class Form(QDialog):
             self.sin_square_mode = False
         self.serial_thread.ser_out("SINS\n")
         time.sleep(0.1)
-        self.set_everything0()
+        self.set_everything_left_gen()
 
     def do_calculation(self):
         if self.sin_square_mode:
@@ -449,7 +384,6 @@ class Form(QDialog):
             time.sleep(0.2)
             a = a + 1
             self.text_to_update = 'no data ' + str(a)
-        self.label24.setText('LENGTH ' + str(len(self.acquired_data_Y)))
         for i in range(0, len(self.acquired_data_Y)):
             if abs(self.acquired_data_Y[i]) >= 4096:
                 self.acquired_data_Y[i] = 0
@@ -585,8 +519,6 @@ class Form(QDialog):
         self.Phase.append(sa)
         self.reader.calculated = True
 
-
-
     def start_stop_measurement(self):
         self.plot_window.graphWidget.clear()
         if self.worker is None:
@@ -613,7 +545,7 @@ class Form(QDialog):
     def draw6(self):
         self.serial_thread.ser_out("FRQ!\n")
         self.serial_thread.ser_out("0\n")
-        self.serial_thread.ser_out(self.edit10.text() + "\n")
+        self.serial_thread.ser_out(self.edit_frequency_left.text() + "\n")
 
     def save(self):
         if not self.sin_square_mode:
@@ -641,7 +573,7 @@ class Form(QDialog):
     def measure(self):
         self.reader.single_flag = True
 
-    def start0(self):
+    def start_left_gen(self):
         self.serial_thread.ser_out("START\n")
         self.serial_thread.ser_out("0\n")
 
@@ -649,7 +581,7 @@ class Form(QDialog):
         self.serial_thread.ser_out("START\n")
         self.serial_thread.ser_out("1\n")
 
-    def stop0(self):
+    def stop_left_gen(self):
         self.serial_thread.ser_out("STOP\n")
         self.serial_thread.ser_out("0\n")
 
@@ -665,20 +597,20 @@ class Form(QDialog):
         self.serial_thread.ser_out("SWEPS\n")
         self.serial_thread.ser_out("1\n")
 
-    def set_everything0(self):
+    def set_everything_left_gen(self):
         self.plot_window.graphWidget.setMouseEnabled(x=False, y=False)
         self.data_bin = False
         self.serial_thread.send_all_counter = 0
         self.serial_thread.b = 0
         self.serial_thread.data = []
         self.text = []
-        self.button13.setEnabled(False)
+        self.button_setup_left.setEnabled(False)
         self.serial_thread.ser_out("AMPL\n")
         self.serial_thread.ser_out("0\n")
-        self.serial_thread.ser_out(self.edit15.text() + "\n")
+        self.serial_thread.ser_out(self.edit_amplitude_left.text() + "\n")
         self.serial_thread.ser_out("OFFS\n")
         self.serial_thread.ser_out("0\n")
-        a = (int(self.edit16.text()) / 3300) * (2 ** 12)
+        a = (int(self.edit_offset_left.text()) / 3300) * (2 ** 12)
         if a >= 4095:
             a = 4095
         if a <= 0:
@@ -686,7 +618,7 @@ class Form(QDialog):
         self.serial_thread.ser_out(str(int(a)) + "\n")
         self.serial_thread.ser_out("FRQ!\n")
         self.serial_thread.ser_out("0\n")
-        self.serial_thread.ser_out(self.edit10.text() + "\n")
+        self.serial_thread.ser_out(self.edit_frequency_left.text() + "\n")
 
     def set_everything1(self):
         self.plot_window.graphWidget.setMouseEnabled(x=False, y=False)
@@ -729,17 +661,14 @@ class Form(QDialog):
         self.selected_comport = 0
         self.serial_thread = SerialThread(115200, self, None)  # Start serial thread
         self.serial_thread.start()
-        # Start worker thread
         self.reader = Reader(self, self.serial_thread)  # Start reading thread
         self.reader.start()
-        super(Form, self).__init__(parent)
+
+        super(MainWindow, self).__init__(parent)
         font = self.font()
         font.setPointSize(10)
-        self.worker = None
-        self.sf = 10
         self.window().setFont(font)
-        self.counter_of_drawing = 0
-
+        self.setWindowTitle("Little Embedded Lock-in")
         datafile = "data/icon.ico"
         if not hasattr(sys, "frozen"):
             datafile = os.path.join(os.path.dirname(__file__), datafile)
@@ -747,16 +676,20 @@ class Form(QDialog):
             datafile = "icon.ico/icon.ico"
             datafile = os.path.join(sys.prefix, datafile)
         self.icon = QtGui.QIcon(datafile)
-        self.help_window = HelpWindow(self.icon)
-        self.plot_window = PlotWindow(self)
         self.setWindowIcon(self.icon)
         self.setWindowFlag(Qt.WindowContextHelpButtonHint, False)
-        self.gui_version = 'v1.0.4'
+
+        self.help_window = HelpWindow(self.icon)
+        self.plot_window = PlotWindow(self)
+
+        self.counter_of_drawing = 0
+        self.gui_version = 'v1.0.5'
         self.fir_version = 'nop'
         self.loadFileName = 'frec.csv'
         self.saveFileName = 'data.csv'
         self.worker = None
         self.sf = 10
+        self.worker = None
         self.backup1 = []
         self.backup2 = []
         self.acquired_data_YY = []
@@ -801,81 +734,85 @@ class Form(QDialog):
         self.last_vertical_maximum = 0
         self.acquired_data_Z = []
         self.text = []
-
-        self.edit2 = QLineEdit("Write commands here..")
-        self.button1 = QPushButton("SET")
-        self.button2 = QPushButton("SET")
-        self.layout_horizontal_gen = QHBoxLayout()
+        self.st = 1
         self.layout_main_vertical = QVBoxLayout()
+
+        self.layout_horizontal_connect = QHBoxLayout()
+        self.layout_horizontal_connect_out = QVBoxLayout()
+
+        self.layout_horizontal_gen = QHBoxLayout()
+        self.layout_vertical_left_gen = QVBoxLayout()
+        self.layout_vertical_right_gen = QVBoxLayout()
+        self.layout_horizontal_left_gen = QHBoxLayout()
+        self.layout_horizontal_right_gen = QHBoxLayout()
+
+        self.layout_horizontal_bottom = QHBoxLayout()
+
         self.group_box_connectivity = QGroupBox("Connectivity")
         self.group_box_connectivity.setCheckable(False)
         self.group_box_left_gen = QGroupBox("Generator channel 1 - pin A2")
         self.group_box_left_gen.setCheckable(False)
         self.group_box_right_gen = QGroupBox("Generator channel 2 - pin D13")
         self.group_box_right_gen.setCheckable(False)
-        self.layout_vertical_left_gen = QVBoxLayout()
+        self.group_box_ssp = QGroupBox("Sampling settings")
+        self.group_box_ssp.setCheckable(False)
+        self.group_box_out = QGroupBox("Output")
+        self.group_box_out.setCheckable(False)
+
         self.group_box_left_gen.setLayout(self.layout_vertical_left_gen)
-        self.layout_vertical_right_gen = QVBoxLayout()
         self.group_box_right_gen.setLayout(self.layout_vertical_right_gen)
-        self.layout_horizontal_bottom = QHBoxLayout()
-        self.layout_horizontal_left_gen = QHBoxLayout()
-        self.layout_horizontal_right_gen = QHBoxLayout()
-        self.layout_horizontal_connect = QHBoxLayout()
-        self.layout_horizontal_connect_out = QVBoxLayout()
         self.layout_horizontal_connect_out.addLayout(self.layout_horizontal_connect)
         self.group_box_connectivity.setLayout(self.layout_horizontal_connect_out)
-        self.setWindowTitle("Little Embedded Lock-in")
-        self.label15 = QLabel("Amplitude")
-        self.edit15 = QLineEdit("85")
-        self.edit15.textChanged.connect(self.e15)
-        self.label16 = QLabel("Offset")
-        self.edit16 = QLineEdit("250")
-        self.edit16.textChanged.connect(self.e16)
-        self.label11 = QLabel("Frequency")
-        self.edit10 = QLineEdit("100")
-        self.edit10.textChanged.connect(self.e10)
-        self.label12 = QLabel("Step")
-        self.edit12 = QLineEdit("1")
-        self.label13 = QLabel("F Start")
-        self.edit13 = QLineEdit("100")
-        self.label14 = QLabel("F Stop")
-        self.edit14 = QLineEdit("1000")
-        self.button10 = QPushButton("Start")
-        self.button11 = QPushButton("Stop")
-        self.button12 = QPushButton("Sweep")
-        self.button13 = QPushButton("Set up Generator 1")
-        self.qs_slider10 = QSlider(Qt.Horizontal, self)
-        self.qs_slider10.setRange(0, 130000)
-        self.qs_slider10.setFocusPolicy(Qt.NoFocus)
-        self.qs_slider10.setPageStep(1)
-        self.qs_slider10.valueChanged.connect(self.slider_update_10)
-        self.qs_slider16 = QSlider(Qt.Horizontal, self)
-        self.qs_slider16.setRange(0, 3300)
-        self.qs_slider16.setFocusPolicy(Qt.NoFocus)
-        self.qs_slider16.setPageStep(1)
-        self.qs_slider16.valueChanged.connect(self.slider_update_16)
-        self.qs_slider15 = QSlider(Qt.Horizontal, self)
-        self.qs_slider15.setRange(0, 100)
-        self.qs_slider15.setFocusPolicy(Qt.NoFocus)
-        self.qs_slider15.setPageStep(1)
-        self.qs_slider15.valueChanged.connect(self.slider_update_15)
-        self.layout_vertical_left_gen.addWidget(self.label15)
-        self.layout_vertical_left_gen.addWidget(self.edit15)
-        self.layout_vertical_left_gen.addWidget(self.qs_slider15)
-        self.layout_vertical_left_gen.addWidget(self.label16)
-        self.layout_vertical_left_gen.addWidget(self.edit16)
-        self.layout_vertical_left_gen.addWidget(self.qs_slider16)
-        self.layout_vertical_left_gen.addWidget(self.label11)
-        self.layout_vertical_left_gen.addWidget(self.edit10)
-        self.layout_vertical_left_gen.addWidget(self.qs_slider10)
-        self.layout_horizontal_left_gen.addWidget(self.button13)
-        self.layout_horizontal_left_gen.addWidget(self.button10)
-        self.layout_horizontal_left_gen.addWidget(self.button11)
+
+        self.label_amplitude_left = QLabel("Amplitude")
+        self.edit_amplitude_left = QLineEdit("85")
+        self.edit_amplitude_left.textChanged.connect(self.on_edit_change_amplitude_left)
+        self.slider_amplitude_left = QSlider(Qt.Horizontal, self)
+        self.slider_amplitude_left.setRange(0, 100)
+        self.slider_amplitude_left.setFocusPolicy(Qt.NoFocus)
+        self.slider_amplitude_left.setPageStep(1)
+        self.slider_amplitude_left.valueChanged.connect(self.on_slider_change_amplitude_left)
+
+        self.label_offset_left = QLabel("Offset")
+        self.edit_offset_left = QLineEdit("250")
+        self.edit_offset_left.textChanged.connect(self.on_edit_change_offset_left)
+        self.slider_offset_left = QSlider(Qt.Horizontal, self)
+        self.slider_offset_left.setRange(0, 3300)
+        self.slider_offset_left.setFocusPolicy(Qt.NoFocus)
+        self.slider_offset_left.setPageStep(1)
+        self.slider_offset_left.valueChanged.connect(self.on_slider_change_offset_left)
+
+        self.label_frequency_left = QLabel("Frequency")
+        self.edit_frequency_left = QLineEdit("100")
+        self.edit_frequency_left.textChanged.connect(self.on_edit_change_frequency_left)
+        self.button_start_left = QPushButton("Start")
+        self.button_stop_left = QPushButton("Stop")
+        self.button_setup_left = QPushButton("Set up Generator 1")
+        self.slider_frequency_left = QSlider(Qt.Horizontal, self)
+        self.slider_frequency_left.setRange(0, 130000)
+        self.slider_frequency_left.setFocusPolicy(Qt.NoFocus)
+        self.slider_frequency_left.setPageStep(1)
+        self.slider_frequency_left.valueChanged.connect(self.on_slider_change_frequency_left)
+
+        self.layout_vertical_left_gen.addWidget(self.label_amplitude_left)
+        self.layout_vertical_left_gen.addWidget(self.edit_amplitude_left)
+        self.layout_vertical_left_gen.addWidget(self.slider_amplitude_left)
+        self.layout_vertical_left_gen.addWidget(self.label_offset_left)
+        self.layout_vertical_left_gen.addWidget(self.edit_offset_left)
+        self.layout_vertical_left_gen.addWidget(self.slider_offset_left)
+        self.layout_vertical_left_gen.addWidget(self.label_frequency_left)
+        self.layout_vertical_left_gen.addWidget(self.edit_frequency_left)
+        self.layout_vertical_left_gen.addWidget(self.slider_frequency_left)
         self.layout_vertical_left_gen.addLayout(self.layout_horizontal_left_gen)
-        self.button10.clicked.connect(self.start0)
-        self.button11.clicked.connect(self.stop0)
-        self.button12.clicked.connect(self.sweep0)
-        self.button13.clicked.connect(self.set_everything0)
+
+        self.layout_horizontal_left_gen.addWidget(self.button_setup_left)
+        self.layout_horizontal_left_gen.addWidget(self.button_start_left)
+        self.layout_horizontal_left_gen.addWidget(self.button_stop_left)
+
+        self.button_start_left.clicked.connect(self.start_left_gen)
+        self.button_stop_left.clicked.connect(self.stop_left_gen)
+        self.button_setup_left.clicked.connect(self.set_everything_left_gen)
+
         self.label25 = QLabel("Amplitude")
         self.edit25 = QLineEdit("50")
         self.edit25.textChanged.connect(self.e25)
@@ -885,12 +822,7 @@ class Form(QDialog):
         self.label21 = QLabel("Frequency")
         self.edit20 = QLineEdit("10")
         self.edit20.textChanged.connect(self.e20)
-        self.label22 = QLabel("Step")
-        self.edit22 = QLineEdit("1")
-        self.label23 = QLabel("F Start")
-        self.edit23 = QLineEdit("10")
-        self.label24 = QLabel("F Stop")
-        self.edit24 = QLineEdit("1000")
+
         self.edit27 = QLineEdit("Commands for Lock-in.\t Ex. \"IDN?\"")
         self.button20 = QPushButton("Start")
         self.button21 = QPushButton("Stop")
@@ -927,12 +859,13 @@ class Form(QDialog):
         self.button20.clicked.connect(self.start1)
         self.button21.clicked.connect(self.stop1)
         self.button22.clicked.connect(self.sweep1)
-        self.st = 1
+
         self.button23.clicked.connect(self.set_everything1)
         self.label_xy = QLabel("XY")
         font1 = self.font()
         font1.setPointSize(15)
         self.label_xy.setFont(font1)
+
         self.label_xy_2 = QLabel("XY")
         self.drop_down_comports = QComboBox()
         self.button_scan = QPushButton("Scan")
@@ -974,15 +907,13 @@ class Form(QDialog):
         for i in range(3, 11):
             self.drop_down_spp.addItem(str(2 ** i))
         self.drop_down_spp.currentIndexChanged.connect(self.spp)
-        self.group_box_ssp = QGroupBox("Sampling settings")
-        self.group_box_ssp.setCheckable(False)
+
         self.layout_vertical_ssp = QVBoxLayout()
         self.layout_vertical_ssp.addWidget(self.label_spp)
         self.layout_vertical_ssp.addWidget(self.drop_down_spp)
         self.group_box_ssp.setLayout(self.layout_vertical_ssp)
         self.layout_main_vertical.addWidget(self.group_box_ssp)
-        self.group_box_out = QGroupBox("Output")
-        self.group_box_out.setCheckable(False)
+
         self.layout_vertical_output = QVBoxLayout()
         self.layout_vertical_output.addWidget(self.label_xy)
         self.layout_vertical_output.addWidget(self.label_xy_2)
@@ -998,9 +929,9 @@ class Form(QDialog):
         self.layout_main_vertical.addWidget(self.group_box_out)
         self.layout_main_vertical.addWidget(self.edit27)
         self.setLayout(self.layout_main_vertical)
-        self.e10()
-        self.e15()
-        self.e16()
+        self.on_edit_change_frequency_left()
+        self.on_edit_change_amplitude_left()
+        self.on_edit_change_offset_left()
         self.e20()
         self.e25()
         self.e26()
@@ -1010,6 +941,6 @@ class Form(QDialog):
 
 
 app = QApplication([])
-window = Form()
+window = MainWindow()
 window.show()
 sys.exit(app.exec_())
