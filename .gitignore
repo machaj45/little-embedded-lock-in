@@ -19,7 +19,7 @@ Application/data.cvs
 Application/dist/*
 Application/build/*
 Application/lock-in.spec
-Firmware/Debug/*
+#Firmware/Debug/*
 !Firmware/Debug/lock-in.bin
 Firmware/.settings/language.settings.xml
 
