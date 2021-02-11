@@ -705,7 +705,7 @@ class MainWindow(QDialog):
         self.plot_window = PlotWindow(self)
 
         self.counter_of_drawing = 0
-        self.gui_version = 'v1.0.5'
+        self.gui_version = 'v1.0.6'
         self.fir_version = 'nop'
         self.loadFileName = 'frec.csv'
         self.saveFileName = 'data.csv'
