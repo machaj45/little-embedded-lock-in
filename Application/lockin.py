@@ -30,7 +30,7 @@ class HelpWindow(QWidget):
         layout = QVBoxLayout()
         self.label = QLabel("Another Window")
         layout.addWidget(self.label)
-        self.setLayout(layout) 
+        self.setLayout(layout)
         self.icon = icon
 
         datafile = "data/hi_res_icon.png"
@@ -751,7 +751,7 @@ class Form(QDialog):
         self.plot_window = PlotWindow(self)
         self.setWindowIcon(self.icon)
         self.setWindowFlag(Qt.WindowContextHelpButtonHint, False)
-        self.gui_version = 'v1.0.2'
+        self.gui_version = 'v1.0.3'
         self.fir_version = 'nop'
         self.loadFileName = 'frec.csv'
         self.saveFileName = 'data.csv'
@@ -934,16 +934,13 @@ class Form(QDialog):
         font1.setPointSize(15)
         self.label_xy.setFont(font1)
         self.label_xy_2 = QLabel("XY")
-
         self.drop_down_comports = QComboBox()
-
         self.button_scan = QPushButton("Scan")
         self.button_connect = QPushButton("Connect")
         self.button_scan.clicked.connect(self.scan)
         self.button_connect.clicked.connect(self.connect)
         self.button_help = QPushButton("Help")
         self.button_help.clicked.connect(self.show_new_window)
-
         self.layout_horizontal_connect_out.addWidget(self.drop_down_comports)
         self.drop_down_comports.currentIndexChanged.connect(self.comports)
         self.layout_horizontal_connect.addWidget(self.button_scan)
@@ -955,8 +952,6 @@ class Form(QDialog):
         self.layout_main_vertical.addLayout(self.layout_horizontal_gen)
         self.label_spp = QLabel("Samples per period")
         self.button_spp = QPushButton("Set Samples per period")
-
-
         self.button_load = QPushButton("Load")
         self.button_toggle_sin_square = QPushButton("Toggle to Square")
         self.button_draw_data = QPushButton("Draw data")
@@ -976,30 +971,21 @@ class Form(QDialog):
         self.button_save_as.clicked.connect(self.save_file_dialog)
         self.button_send_command.clicked.connect(self.send_command)
         self.drop_down_spp = QComboBox()
-
         for i in range(3, 11):
             self.drop_down_spp.addItem(str(2 ** i))
         self.drop_down_spp.currentIndexChanged.connect(self.spp)
-
         self.group_box_ssp = QGroupBox("Sampling settings")
         self.group_box_ssp.setCheckable(False)
-
         self.layout_vertical_ssp = QVBoxLayout()
         self.layout_vertical_ssp.addWidget(self.label_spp)
         self.layout_vertical_ssp.addWidget(self.drop_down_spp)
-
         self.group_box_ssp.setLayout(self.layout_vertical_ssp)
         self.layout_main_vertical.addWidget(self.group_box_ssp)
-
         self.group_box_out = QGroupBox("Output")
         self.group_box_out.setCheckable(False)
         self.layout_vertical_output = QVBoxLayout()
-
         self.layout_vertical_output.addWidget(self.label_xy)
         self.layout_vertical_output.addWidget(self.label_xy_2)
-
-
-
         self.layout_horizontal_bottom.addWidget(self.button_continuous)
         self.layout_horizontal_bottom.addWidget(self.button_single)
         self.layout_horizontal_bottom.addWidget(self.button_toggle_sin_square)
