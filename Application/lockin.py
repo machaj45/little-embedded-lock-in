@@ -30,7 +30,7 @@ class HelpWindow(QWidget):
         layout = QVBoxLayout()
         self.label = QLabel("Another Window")
         layout.addWidget(self.label)
-        self.setLayout(layout)
+        self.setLayout(layout) 
         self.icon = icon
 
         datafile = "data/hi_res_icon.png"
