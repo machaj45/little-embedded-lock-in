@@ -14,7 +14,11 @@ case "$(uname -s)" in
    Linux)
      echo 'Linux'
      # shellcheck disable=SC2006   
-     `pyinstaller --onefile  --add-binary "data/icon.ico,icon.ico" --add-binary "data/hi_res_icon.png,hi_res_icon.png" --icon "data/icon.ico" -n "lock-in"  lockin.py`
+     `pyinstaller --onefile  --add-binary "data/icon.ico:icon.ico" --add-binary "data/hi_res_icon.png:hi_res_icon.png" --icon "data/icon.ico" -n "lock-in"  lockin.py`
+     rm -rf ./build
+     rm -rf ./__pycache__
+     rm  ./lock-in.spec
+     echo 'building for Linux DONE'
      ;;
 
    CYGWIN*|MINGW32*|MSYS*|MINGW*)
