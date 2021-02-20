@@ -17,6 +17,7 @@ Application/__pycache__/*
 Application/.idea/*
 Application/data.cvs
 Application/dist/*
+Application/venv
 Application/build/*
 Application/lock-in.spec
 Firmware/Debug/*
