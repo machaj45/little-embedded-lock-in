@@ -6,9 +6,7 @@ from PyQt5.QtWidgets import QDialog, QLineEdit, QPushButton, QApplication, QGrou
 from PyQt5.QtWidgets import QVBoxLayout, QLabel, QHBoxLayout, QComboBox, QSlider, QFileDialog, QPlainTextEdit
 from PyQt5.QtCore import Qt
 from PyQt5 import QtGui
-import math
-
-import SquareCalculation
+from SquareCalculation import SquareCalculation
 from HelpWindow import HelpWindow
 from PlotWindow import PlotWindow
 from SerialThread import SerialThread
@@ -451,9 +449,11 @@ class MainWindow(QDialog):
         try:
             self.label_xy.setText(self.text_to_update)
             self.label_xy_2.setText(self.text_to_update_2)
+            """    
             if self.plainText.verticalScrollBar().maximum() != self.last_vertical_maximum:
                 self.plainText.verticalScrollBar().setValue(self.plainText.verticalScrollBar().maximum() - 1)
                 self.last_vertical_maximum = self.plainText.verticalScrollBar().maximum()
+            """
             if self.last_text != self.text_to_update_3 and self.plainText is not None:
                 if self.text_to_update_3 != "":
                     self.plainText.insertPlainText(self.text_to_update_3 + '\n')
@@ -741,6 +741,7 @@ class MainWindow(QDialog):
         self.e25()
         self.e26()
         self.plainText = QPlainTextEdit(self)
+        self.plainText.setReadOnly(True)
         self.layout_main_vertical.addWidget(self.plainText)
         self.automatic_update_check()
 

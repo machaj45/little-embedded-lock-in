@@ -39,7 +39,7 @@ class SerialThread(QtCore.QThread):
 
     def initialize_run_method(self):
         self.serial = serial.Serial(baudrate=self.baud_rate, bytesize=serial.EIGHTBITS, parity=serial.PARITY_NONE,
-                                    stopbits=serial.STOPBITS_ONE, timeout=SER_TIMEOUT, write_timeout=0.01)
+                                    stopbits=serial.STOPBITS_ONE, timeout=SER_TIMEOUT, write_timeout=0.1)
         self.count = 1
         self.available_ports = []
         self.send_all_counter = 0
@@ -50,7 +50,7 @@ class SerialThread(QtCore.QThread):
             self.serial.port = i.device
             try:
                 with self.serial as s:
-                    time.sleep(0.2)
+                    time.sleep(0.5)
                     s.write(b'IDN?\n')
                     s.flush()
                     data = s.read(size=18)
@@ -199,6 +199,7 @@ class SerialThread(QtCore.QThread):
         return checkout
 
     def run(self):
+        time.sleep(0.5)
         data_out_queue = ''
         self.running = True
         self.initialize_run_method()
@@ -216,6 +217,7 @@ class SerialThread(QtCore.QThread):
                 self.gui.button_setup_left.setEnabled(True)
             if self.count > 1:
                 self.gui.plainText.undo()
+                pass
             self.gui.plainText.insertPlainText(
                 'Not Connected,\t attempting to connect number {0}\n'.format(self.count))
             self.count = self.count + 1
@@ -273,3 +275,4 @@ class SerialThread(QtCore.QThread):
         if self.serial:
             self.serial.close()
             self.serial = None
+            self.deleteLater()
