@@ -7,11 +7,14 @@ from PyQt5.QtWidgets import QVBoxLayout, QLabel, QHBoxLayout, QComboBox, QSlider
 from PyQt5.QtCore import Qt
 from PyQt5 import QtGui
 import math
+
+import SquareCalculation
 from HelpWindow import HelpWindow
 from PlotWindow import PlotWindow
 from SerialThread import SerialThread
 from Worker import Worker
 from Reader import Reader
+from DualPhase import DualPhase
 import statistics
 import csv
 import time
@@ -272,89 +275,10 @@ class MainWindow(QDialog):
 
     def do_calculation(self):
         if self.sin_square_mode:
-            self.square_calculation()
+            SquareCalculation.square_calculation(self)
         else:
-            self.dual_phase_decomposition()
+            DualPhase.dual_phase_decomposition(self)
             self.plot_window.plot_data_set()
-
-    def square_calculation(self):
-        a = 0
-        while len(self.acquired_data_Y) == 0:
-            time.sleep(0.2)
-            a = a + 1
-            self.text_to_update = 'no data ' + str(a)
-
-        my = statistics.mean(self.acquired_data_Y)
-        mx = 0
-
-        self.acquired_data_XX = []
-        self.acquired_data_YY = []
-
-        for i in range(0, len(self.acquired_data_Y)):
-            self.acquired_data_YY.append(self.acquired_data_Y[i] - my)
-        for i in range(0, len(self.acquired_data_X)):
-            self.acquired_data_XX.append(self.acquired_data_X[i] - mx)
-
-        del self.acquired_data_XX[0:int(self.sample_per_period / 4)]
-        del self.acquired_data_YY[0:int(self.sample_per_period / 4)]
-        del self.acquired_data_XX[len(self.acquired_data_XX) - self.sample_per_period:-1]
-        del self.acquired_data_YY[len(self.acquired_data_YY) - self.sample_per_period:-1]
-
-        self.ref = [r * (3.30 / 4095.0) for r in self.acquired_data_XX]
-        self.dut = [d * (3.30 / 4095.0) for d in self.acquired_data_YY]
-
-        del self.ref[-1]
-        ref_length = len(self.ref)
-        self.time_sample = ref_length / self.sf
-        mx = statistics.mean(self.ref)
-        a = 0
-        for i in self.ref:
-            if i > mx:
-                self.ref[a] = 1
-            if i < mx:
-                self.ref[a] = -1
-            a = a + 1
-
-            # vaclav.grim@fel.cvut.cz
-
-        self.X = []
-        self.Y = []
-        for i in range(0, len(self.dut)):
-            self.X.append(self.dut[i] * self.ref[i])
-        string3 = ""
-        string1 = ""
-        string = ""
-        std_x = 0
-        if len(self.X) > 0:
-            mean_x = statistics.mean(self.X)
-            std_x = statistics.stdev(self.X)
-            dist = int(abs(math.log10(abs(std_x)))) + 4
-            dist2 = int(abs(math.log10(abs(mean_x)))) + 4
-            dist3 = int(abs(math.log10(abs(mean_x / std_x))))
-            dist = max(dist, dist2)
-            string = "{:." + str(dist) + "f}"
-            string1 = "{:." + str(dist3) + "f}"
-            dist4 = int(abs(math.log10(abs(self.time_sample)))) + 4
-            string3 = "{:." + str(dist4) + "f}"
-
-        else:
-            mean_x = 1
-        self.acquired_data = []
-        self.acquired_data_X = []
-        self.acquired_data_Y = []
-        string_for_time_sample = string3.format(self.time_sample)
-        try:
-            self.text_to_update = "U\N{SUBSCRIPT TWO} = " + string.format(
-                mean_x) + " V," + " sigma =" + " " + string.format(
-                std_x) + " V, " + "U\N{SUBSCRIPT TWO}/sigma= " + string1.format(
-                20 * math.log10(mean_x / std_x)) + " dB\n" + "Time duration = {0} s".format(string_for_time_sample)
-        except ValueError:
-            self.text_to_update = "U\N{SUBSCRIPT TWO} = " + string.format(
-                mean_x) + " V," + " sigma =" + " " + string.format(
-                std_x) + " V \n" + "Time duration = {0} s".format(string_for_time_sample)
-        self.Gain.append(string.format(mean_x))
-        # self.Phase.append(string_for_time_sample)
-        self.reader.calculated = True
 
     @staticmethod
     def crossings_nonzero_pos2neg(data):
@@ -381,147 +305,6 @@ class MainWindow(QDialog):
         pos = data > 0
         not_pos = ~pos
         return ((pos[:-1] & not_pos[1:]) | (not_pos[:-1] & pos[1:])).nonzero()[0][-1]
-
-    def dual_phase_decomposition(self, strings=None, string_for_xy=None):
-        a = 0
-        while len(self.acquired_data_Y) == 0:
-            time.sleep(0.2)
-            a = a + 1
-            self.text_to_update = 'no data ' + str(a)
-        for i in range(0, len(self.acquired_data_Y)):
-            if abs(self.acquired_data_Y[i]) >= 4096:
-                self.acquired_data_Y[i] = 0
-        for i in range(0, len(self.acquired_data_X)):
-            if abs(self.acquired_data_X[i]) >= 4096:
-                self.acquired_data_X[i] = 0
-        my = statistics.mean(self.acquired_data_Y)
-        mx = statistics.mean(self.acquired_data_X)
-
-        self.acquired_data_XX = []
-        self.acquired_data_YY = []
-        self.acquired_data_ZZ = []
-
-        for i in range(0, len(self.acquired_data_Y)):
-            self.acquired_data_YY.append(self.acquired_data_Y[i] - my)
-        for i in range(0, len(self.acquired_data_X)):
-            self.acquired_data_XX.append(self.acquired_data_X[i] - mx)
-            self.acquired_data_ZZ.append(self.acquired_data_X[i] - mx)
-        for i in range(0, int(self.sample_per_period / 4)):
-            self.acquired_data_ZZ.insert(0, 0)
-
-        # remove start for angle accuracy
-
-        del self.acquired_data_XX[0:int(self.sample_per_period / 4)]
-        del self.acquired_data_YY[0:int(self.sample_per_period / 4)]
-        del self.acquired_data_ZZ[0:int(self.sample_per_period / 4)]
-        del self.acquired_data_XX[len(self.acquired_data_XX) - self.sample_per_period:-1]
-        del self.acquired_data_YY[len(self.acquired_data_YY) - self.sample_per_period:-1]
-        del self.acquired_data_ZZ[
-            len(self.acquired_data_ZZ) - int(self.sample_per_period + self.sample_per_period / 4):-1]
-
-        self.dut = [d * (3.30 / 4095) for d in self.acquired_data_YY]
-        self.ref = [r * (3.30 / 4095) for r in self.acquired_data_XX]
-        self.ref90 = [rd * (3.30 / 4095) for rd in self.acquired_data_ZZ]
-
-        aa = self.crossings_nonzero_pos2neg(self.ref)
-        if len(aa) < 2 * int(len(self.ref) / self.sample_per_period):
-            ba = self.crossings_nonzero_neg2pos(self.ref)
-            min_removed_end = min(aa[0], ba[0])
-            del self.ref[0:min_removed_end]
-            del self.ref90[0:min_removed_end]
-            del self.dut[0:min_removed_end]
-
-            a = self.crossings_nonzero_pos2neg(self.ref)
-            b = self.crossings_nonzero_neg2pos(self.ref)
-
-            length_of_calculation = 0
-            if len(self.dut) > len(self.ref):
-                length_of_calculation = len(self.ref)
-            if len(self.dut) < len(self.ref):
-                length_of_calculation = len(self.dut)
-            length_of_ref = length_of_calculation
-            if aa[0] == min_removed_end:
-                length_of_ref = a[-1]
-            if ba[0] == min_removed_end:
-                length_of_ref = b[-1]
-
-            del self.ref[length_of_ref:-1]
-            del self.ref90[length_of_ref:-1]
-            del self.dut[length_of_ref:-1]
-
-        self.ref_norm = [r ** 2 for r in self.ref]
-        mrs_norm_ref = math.sqrt(statistics.mean(self.ref_norm))
-        self.ref_norm = [r / mrs_norm_ref for r in self.ref]
-
-        self.ref90n = [r ** 2 for r in self.ref90]
-        mrs_norm_ref_90 = math.sqrt(statistics.mean(self.ref90n))
-        self.ref90n = [r / mrs_norm_ref_90 for r in self.ref90]
-
-        del self.ref[-1]
-        del self.ref90[-1]
-        ref_length = len(self.ref)
-        self.time_sample = ref_length / self.sf
-
-        self.X = []
-        self.Y = []
-        self.Xn = []
-        self.Yn = []
-        length_of_calculation = 0
-        if len(self.dut) >= len(self.ref):
-            length_of_calculation = len(self.ref)
-        if len(self.dut) <= len(self.ref):
-            length_of_calculation = len(self.dut)
-        for i in range(0, length_of_calculation):
-            self.X.append(self.dut[i] * self.ref[i])
-            self.Xn.append(self.dut[i] * self.ref_norm[i])
-        for i in range(0, length_of_calculation):
-            self.Y.append(self.dut[i] * self.ref90[i])
-            self.Yn.append(self.dut[i] * self.ref90n[i])
-        mean_x_norm = 0
-        mean_y_norm = 0
-        if len(self.X) > 0:
-            mean_x = statistics.mean(self.X)
-            mean_y = statistics.mean(self.Y)
-            mean_x_norm = statistics.mean(self.Xn)
-            mean_y_norm = statistics.mean(self.Yn)
-        else:
-            mean_x, mean_y = 1, 0
-
-        self.acquired_data = []
-        self.acquired_data_X = []
-        self.acquired_data_Y = []
-        sa = -(180 * (math.atan2(mean_y, mean_x) / math.pi))
-        dist = math.sqrt(mean_x ** 2 + mean_y ** 2)
-        dist_norm = math.sqrt(mean_x_norm ** 2 + mean_y_norm ** 2)
-        input_gain = 1
-        if dist > 0:
-            if len(self.ref) > 0:
-                input_gain = math.sqrt(statistics.mean([r ** 2 for r in self.ref]))
-            else:
-                input_gain = 1
-            sb = 20 * math.log10((dist_norm / input_gain))
-            dists = int(abs(math.log10(abs(dist_norm)))) + 4
-            string = "{:." + str(dists) + "f}"
-            sas = int(abs(math.log10(abs(sa)))) + 4
-            strings = "{:." + str(sas) + "f}"
-            sbs = int(abs(math.log10(abs(sb)))) + 4
-            string_bs = "{:." + str(sbs) + "f}"
-            sxs = int(abs(math.log10(abs(mean_x)))) + 4
-            string_for_xy = "{:." + str(sxs) + "f}"
-            dist4 = int(abs(math.log10(abs(self.time_sample)))) + 4
-            string3 = "{:." + str(dist4) + "f}"
-            time_duration_string = string3.format(self.time_sample)
-            self.text_to_update = "Phase = " + strings.format(sa) + "° and  gain = " + string_bs.format(
-                sb) + " dB,\nX: " + string_for_xy.format(mean_x) + " Y: " + string_for_xy.format(
-                mean_y) + " U\N{SUBSCRIPT TWO} = " + string.format(
-                dist) + " V" + " U\N{SUBSCRIPT TWO} / U\N{SUBSCRIPT ONE} = " + string.format(
-                (dist_norm / input_gain)) + " " + "\nTime duration = {0} s".format(time_duration_string)
-        else:
-            self.text_to_update = "Phase = " + strings.format(sa) + "° and  gain = -Inf " + \
-                                  " dB X: " + string_for_xy.format(mean_x) + " Y: " + string_for_xy.format(mean_y)
-        self.Gain.append(20 * math.log10(dist / input_gain))
-        self.Phase.append(sa)
-        self.reader.calculated = True
 
     def start_stop_measurement(self):
         self.plot_window.graphWidget.clear()
