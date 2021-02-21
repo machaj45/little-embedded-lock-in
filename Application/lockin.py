@@ -163,7 +163,10 @@ class MainWindow(QDialog):
                 self.drop_down_comports.addItem(dev.device)
                 self.serial_thread.available_ports.append(dev.device)
         txt = txt[:-2]
-        self.text_to_update_3.put(txt + '\n')
+        if len(self.serial_thread.available_ports) > 0:
+            self.text_to_update_3.put(txt + '\n')
+        else:
+            self.text_to_update_3.put("There are no available ports" + '\n')
         pass
 
     def connect(self):

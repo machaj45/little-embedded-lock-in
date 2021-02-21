@@ -31,15 +31,16 @@ class PlotWindow(QWidget):
 
     def plot_data(self):
         self.graphWidget.clear()
+        self.graphWidget.showGrid(x=True, y=True, alpha=0.3)
         self.graphWidget.plot([x * 1 / self.gui.sf for x in range(0, len(self.gui.dut))], self.gui.dut,
-                              pen=pyqtgraph.mkPen(color=(255, 0, 0)), name='dut')
+                              pen=pyqtgraph.mkPen(color=(255, 0, 0)), name='dut(t)')
         self.graphWidget.plot([x * 1 / self.gui.sf for x in range(0, len(self.gui.ref))], self.gui.ref,
-                              pen=pyqtgraph.mkPen(color=(0, 255, 0)), name='ref')
+                              pen=pyqtgraph.mkPen(color=(0, 255, 0)), name='ref(t)')
         if self.gui.sin_square_mode:
             self.graphWidget.plot([x * 1 / self.gui.sf for x in range(0, len(self.gui.X))], self.gui.X,
                                   pen=pyqtgraph.mkPen(color=(0, 100, 255), style=Qt.DotLine), name='U2')
         if not self.gui.sin_square_mode:
             self.graphWidget.plot([x * 1 / self.gui.sf for x in range(0, len(self.gui.ref90))], self.gui.ref90,
-                                  pen=pyqtgraph.mkPen(color=(0, 100, 255)), name='ref90')
+                                  pen=pyqtgraph.mkPen(color=(0, 100, 255)), name='ref(t+90°)')
         self.graphWidget.addLegend()
         self.graphWidget.setMouseEnabled(x=True, y=True)
