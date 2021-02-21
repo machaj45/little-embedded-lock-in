@@ -1139,7 +1139,7 @@ int main(void)
 		switch(getRequest()){
 			case 0:newinput= atoi(Rx_Buffer);break;
 			case 1:pr("Lock-in Amplifier\n");sin_square=1;break;
-			case 2:pr("Version 1.0.6\n");break;
+			case 2:pr("Version 1.0.7\n");break;
 			case 3:pr("Frequency is %d\n",100);break;
 			case 4:;break;
 			case 5:pr("Starting Generator\n");sweep0=0;break;
