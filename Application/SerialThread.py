@@ -71,6 +71,9 @@ class SerialThread(QtCore.QThread):
                     self.running = False
             except serial.serialutil.SerialException as e:
                 self.gui.text_to_update_3.put("HERE in comport_search()" + '\n' + str(e))
+                if self.serial:
+                    self.serial.close()
+                    self.running = False
                 break
 
         return self.available_ports
