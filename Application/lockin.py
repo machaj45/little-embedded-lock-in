@@ -15,7 +15,6 @@ from SerialThread import SerialThread
 from Worker import Worker
 from Reader import Reader
 from DualPhase import DualPhase
-import statistics
 import csv
 import time
 import numpy as np
@@ -292,6 +291,7 @@ class MainWindow(QDialog):
 
     def do_calculation(self):
         if self.do_calculation_flag:
+            self.text_to_update_2 = ''
             if self.sin_square_mode:
                 SquareCalculation.square_calculation(self)
             else:
@@ -485,10 +485,8 @@ class MainWindow(QDialog):
                     self.plainText.moveCursor(QTextCursor.End)
                     if new_text.endswith('\n'):
                         self.plainText.insertPlainText(new_text)
-
                     else:
                         self.plainText.insertPlainText(new_text + '\n')
-                 #   self.plainText.moveCursor(QTextCursor.End)
         except RuntimeError as a:
             print(a)
 
@@ -538,7 +536,7 @@ class MainWindow(QDialog):
         self.data_probe = 0
         self.backup3 = []
         self.text_to_update = "After measurement data will be displayed here!"
-        self.text_to_update_2 = "Program start"
+        self.text_to_update_2 = ""
         self.text_to_update_3 = queue.Queue()
         self.FreqMeasured = []
         self.Gain = []
@@ -557,7 +555,7 @@ class MainWindow(QDialog):
         self.running = None
         self.ref90 = []
         self.ref_norm = []
-        self.ref90n = []
+        self.ref90_norm = []
         self.X = []
         self.Y = []
 

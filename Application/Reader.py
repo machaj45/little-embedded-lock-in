@@ -81,7 +81,7 @@ class Reader(QtCore.QThread):
             if self.take_next_measurement and self.calculated:
                 if self.con_flag_stop:
                     self.con_flag = False
-                    self.gui.text_to_update_2 = "end of continual measurement"
+                    self.gui.text_to_update_3.put("end of continual measurement")
                     self.con_flag_stop = False
                     return
                 self.calculated = False
