@@ -38,12 +38,12 @@ class SerialThread(QtCore.QThread):
         pass
 
     def initialize_run_method(self):
-        self.serial = serial.Serial(baudrate=self.baud_rate, bytesize=serial.EIGHTBITS, parity=serial.PARITY_NONE,
-                                    stopbits=serial.STOPBITS_ONE, timeout=SER_TIMEOUT, write_timeout=0.1)
-        self.count = 1
-        self.available_ports = []
-        self.send_all_counter = 0
-        self.counter_of_dnr_answers = 0
+            self.serial = serial.Serial(baudrate=self.baud_rate, bytesize=serial.EIGHTBITS, parity=serial.PARITY_NONE,
+                                        stopbits=serial.STOPBITS_ONE, timeout=SER_TIMEOUT, write_timeout=0.01)
+            self.count = 1
+            self.available_ports = []
+            self.send_all_counter = 0
+            self.counter_of_dnr_answers = 0
 
     def comport_search(self):
         for i in serial.tools.list_ports.comports():
@@ -61,40 +61,41 @@ class SerialThread(QtCore.QThread):
                                 self.available_ports.append(i.device)
                                 self.serial.port = i.device
                         except UnicodeDecodeError:
-                            self.gui.plainText.insertPlainText('UnicodeDecodeError in comport_search' + '\n')
+                            self.gui.text_to_update_3.put('UnicodeDecodeError in comport_search' + '\n')
                     s.flushInput()
-                    self.serial.close()
-            except serial.serialutil.SerialTimeoutException:
-                self.gui.plainText.insertPlainText("Error timeout on port {}".format(i.device) + '\n')
-            except serial.serialutil.SerialException:
                 self.serial.close()
-                self.initialize_run_method()
-                self.gui.plainText.insertPlainText("Serial.serialutil.SerialException in comport_search()" + '\n')
-                continue
+            except serial.serialutil.SerialTimeoutException:
+                self.gui.text_to_update_3.put("Error timeout on port {}".format(i.device) + '\n')
+                if self.serial:
+                    self.serial.close()
+                    self.running = False
+            except serial.serialutil.SerialException as e:
+                self.gui.text_to_update_3.put("HERE in comport_search()" + '\n' + str(e))
+                break
 
         return self.available_ports
 
     def set_left_gen_gui(self):
-        self.gui.label_amplitude_left.setText("Amplitude - {0} %, Upp = {1} mV".format(self.gui.text[0][:-2], int(
-            3300 * (float(self.gui.text[0][:-2]) / 100))))
+        self.gui.label_amplitude_left_text = "Amplitude - {0} %, Upp = {1} mV".format(self.gui.text[0][:-2], int(
+            3300 * (float(self.gui.text[0][:-2]) / 100)))
         a = int(3300 * (float(self.gui.text[2][:-1]) / (2 ** 12)))
         if a == 0:
             a = 0
         else:
             a = int(3300 * (float(self.gui.text[2][:-1]) / (2 ** 12))) + 1
-        self.gui.label_offset_left.setText("Offset - {0} mV".format(a))
-        self.gui.label_frequency_left.setText("Frequency - {0} Hz".format(self.gui.text[1][:-1]))
+        self.gui.label_offset_left_text = "Offset - {0} mV".format(a)
+        self.gui.label_frequency_left_text = "Frequency - {0} Hz".format(self.gui.text[1][:-1])
         self.gui.frequency_gen_1 = float(self.gui.text[1][:-1])
         self.gui.button_setup_left.setEnabled(True)
 
     def set_right_gen_gui(self):
-        self.gui.label25.setText("Amplitude - {0} %, Upp = {1} mV".format(self.gui.text[0][:-2], int(
-            3300 * (float(self.gui.text[0][:-2]) / 100))))
+        self.gui.label25_text = "Amplitude - {0} %, Upp = {1} mV".format(self.gui.text[0][:-2], int(
+            3300 * (float(self.gui.text[0][:-2]) / 100)))
         a = int(3300 * (float(self.gui.text[2][:-1]) / (2 ** 12))) + 1
         if a == 1:
             a = 0
-        self.gui.label26.setText("Offset - {0} mV".format(a))
-        self.gui.label21.setText("Frequency - {0} Hz".format(self.gui.text[1][:-1]))
+        self.gui.label26_text = "Offset - {0} mV".format(a)
+        self.gui.label21_text = "Frequency - {0} Hz".format(self.gui.text[1][:-1])
         self.gui.button23.setEnabled(True)
 
     def asci_mode(self, s, txd):
@@ -106,11 +107,11 @@ class SerialThread(QtCore.QThread):
                 text_decoded = self.data.decode('ascii')
                 if text_decoded[-1] == '\r':
                     text_decoded = text_decoded[:-1]
-                self.gui.plainText.insertPlainText("Send {0},\t Received {1}".format(txd[:-1], text_decoded))
+                self.gui.text_to_update_3.put("Send {0},\t Received {1}".format(txd[:-1], text_decoded))
                 self.gui.last_data = "{0}".format(self.data.decode('ascii'))
             except UnicodeDecodeError:
                 self.gui.data_bin = True
-                self.gui.plainText.insertPlainText("Turning on bin mode\n")
+                self.gui.text_to_update_3.put("Turning on bin mode\n")
                 return
             self.gui.text.append(self.data.decode('ascii'))
             if self.gui.last_data == "MD\n\r":
@@ -122,7 +123,7 @@ class SerialThread(QtCore.QThread):
             if self.gui.last_data == "DNR\n\r":
                 self.counter_of_dnr_answers = self.counter_of_dnr_answers + 1
                 self.gui.last_data = ""
-                self.gui.plainText.insertPlainText("DNR #" + str(self.counter_of_dnr_answers) + '\n')
+                self.gui.text_to_update_3.put("DNR #" + str(self.counter_of_dnr_answers) + '\n')
 
             self.send_all_counter = self.send_all_counter + 1
 
@@ -138,7 +139,7 @@ class SerialThread(QtCore.QThread):
         open_serial.timeout = 6
         data_length_in_bytes = int(10000 / self.gui.sample_per_period)
         samples = (data_length_in_bytes - 1) * self.gui.sample_per_period
-        self.gui.plainText.insertPlainText("Number of samples " + str(samples) + '\n')
+        self.gui.text_to_update_3.put("Number of samples " + str(samples) + '\n')
         self.gui.data_done = True
         self.data = open_serial.read(int(samples) * 4)
         open_serial.timeout = SER_TIMEOUT
@@ -152,7 +153,7 @@ class SerialThread(QtCore.QThread):
             self.data = []
             self.gui.acquired_data_X += (self.gui.acquired_data[0:-1:2])
             self.gui.acquired_data_Y += (self.gui.acquired_data[1:-1:2])
-            self.gui.do_calculation()
+            self.gui.do_calculation_flag = True
 
     def check(self):
         checkout = False
@@ -167,7 +168,7 @@ class SerialThread(QtCore.QThread):
                         if "Lock-in Amplifier\n" == data.decode('ascii'):
                             checkout = True
                     except UnicodeDecodeError:
-                        self.gui.plainText.insertPlainText("UnicodeDecodeError in check\n")
+                        self.gui.text_to_update_3.put("UnicodeDecodeError in check\n")
                 s.flushInput()
                 s.write(b'VER?\n')
                 s.flush()
@@ -183,46 +184,45 @@ class SerialThread(QtCore.QThread):
                                 check = check + 1
                             i = i + 1
                         if check == 5:
-                            self.gui.plainText.insertPlainText("Firmware version and gui version are same!\n")
+                            self.gui.text_to_update_3.put("Firmware version and gui version are same!\n")
                         else:
-                            self.gui.plainText.insertPlainText("Firmware version and gui version are not same!\n")
-                            self.gui.plainText.insertPlainText("Please update your firmware!\n")
+                            self.gui.text_to_update_3.put("Firmware version and gui version are not same!\n")
+                            self.gui.text_to_update_3.put("Please update your firmware!\n")
 
                     except UnicodeDecodeError:
-                        self.gui.plainText.insertPlainText("UnicodeDecodeError in check\n")
+                        self.gui.text_to_update_3.put("UnicodeDecodeError in check\n")
                 s.flushInput()
                 self.serial.close()
-        except serial.serialutil.SerialException:
-            self.serial.close()
-            self.initialize_run_method()
-            self.gui.plainText.insertPlainText("SerialException in check\n")
+        except serial.serialutil.SerialException as e:
+            if self.serial:
+                self.serial.close()
+                self.running = False
+            self.gui.text_to_update_3.put("SerialException in check\n" + str(e))
         return checkout
 
     def run(self):
-        time.sleep(0.5)
-        data_out_queue = ''
+        time.sleep(1)
         self.running = True
+        self.gui.text_to_update_3.put("Start of serial Thread")
+        self.gui.serial_thread_is_running = True
+        data_out_queue_string = ''
         self.initialize_run_method()
         t_comport = None
         if self.comport is not None:
             t_comport = self.comport
 
-        while len(self.available_ports) == 0:
-            time.sleep(0.2)
+        while len(self.available_ports) == 0 and self.running:
             self.available_ports = self.comport_search()
             if len(self.available_ports) > 0:
                 self.serial.port = self.available_ports[0]
                 self.comport = self.serial.port
             else:
                 self.gui.button_setup_left.setEnabled(True)
-            if self.count > 1:
-                self.gui.plainText.undo()
-                pass
-            self.gui.plainText.insertPlainText(
-                'Not Connected,\t attempting to connect number {0}\n'.format(self.count))
+            self.gui.text_to_update_3.put('Not Connected, attempting to connect number {0}\n'.format(self.count))
             self.count = self.count + 1
             if self.count > 10:
-                self.serial.close()
+                if self.serial:
+                    self.serial.close()
                 self.initialize_run_method()
 
             if t_comport is not None:
@@ -230,17 +230,14 @@ class SerialThread(QtCore.QThread):
                 self.comport = t_comport
             else:
                 self.serial.port = self.comport
-        if self.check():
-            self.gui.plainText.insertPlainText("Connected to %s at %u baud" % (self.serial.port, self.baud_rate) + '\n')
-            txt = "Available  port are: "
-            self.gui.drop_down_comports.clear()
-            for s in self.available_ports:
-                txt += ("%s" % s + ', ')
-                self.gui.drop_down_comports.addItem(s)
-            txt = txt[:-2]
-            self.gui.plainText.insertPlainText(txt + '\n')
+
+        if self.running and self.check():
+            self.gui.text_to_update_3.put("Connected to %s at %u baud" % (self.serial.port, self.baud_rate) + '\n')
         else:
-            self.gui.plainText.insertPlainText("Unable to connect to comport %s " % self.serial.port + '\n')
+            if self.serial is not None:
+                self.gui.text_to_update_3.put("Unable to connect to comport %s " % self.serial.port + '\n')
+            else:
+                self.gui.text_to_update_3.put("Unable to connect to comport self.serial is None\n")
             self.running = False
 
         # -------------------------------------------------------------------------------#
@@ -255,24 +252,29 @@ class SerialThread(QtCore.QThread):
             try:
                 with self.serial as s:
                     if not self.data_out_queue.empty():
-                        data_out_queue = str(self.data_out_queue.get())
-                        s.write(self.str_bytes(data_out_queue))
+                        data_out_queue_string = str(self.data_out_queue.get())
+                        s.write(self.str_bytes(data_out_queue_string))
                         s.flush()
                     if not self.gui.data_bin:
-                        self.asci_mode(s, data_out_queue)
+                        self.asci_mode(s, data_out_queue_string)
                     else:
                         self.bin_mode(s)
                         self.gui.data_bin = False
                     self.data = []
             except serial.serialutil.SerialException:
-                self.gui.plainText.insertPlainText("SerialException in running enabling send all \
-                                                        button and waiting\n")
+                self.gui.text_to_update_3.put("SerialException in running enabling send all \
+                                               button and waiting\n")
+                if self.serial:
+                    self.serial.close()
+                    self.running = False
                 self.gui.button_setup_left.setEnabled(True)
-                self.serial.close()
-                self.running = False
+                if self.serial:
+                    self.serial.close()
+                    self.running = False
                 self.available_ports = []
-
         if self.serial:
             self.serial.close()
             self.serial = None
-            self.deleteLater()
+        self.gui.text_to_update_3.put("End of serial Thread")
+        self.gui.serial_thread_is_running = False
+        self.deleteLater()

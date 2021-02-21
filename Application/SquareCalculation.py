@@ -1,3 +1,8 @@
+import math
+import statistics
+import time
+
+
 class SquareCalculation:
 
     @staticmethod
