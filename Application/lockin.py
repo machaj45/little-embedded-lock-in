@@ -2,6 +2,8 @@
 # -*- coding: utf-8 -*-
 import queue
 import sys
+
+from PyQt5.QtGui import QTextCursor
 from PyQt5.QtWidgets import QDialog, QLineEdit, QPushButton, QApplication, QGroupBox
 from PyQt5.QtWidgets import QVBoxLayout, QLabel, QHBoxLayout, QComboBox, QSlider, QFileDialog, QPlainTextEdit
 from PyQt5.QtCore import Qt, QTimer
@@ -480,10 +482,13 @@ class MainWindow(QDialog):
             while not self.text_to_update_3.empty():
                 new_text = str(self.text_to_update_3.get())
                 if new_text != "":
+                    self.plainText.moveCursor(QTextCursor.End)
                     if new_text.endswith('\n'):
                         self.plainText.insertPlainText(new_text)
+
                     else:
                         self.plainText.insertPlainText(new_text + '\n')
+                 #   self.plainText.moveCursor(QTextCursor.End)
         except RuntimeError as a:
             print(a)
 
