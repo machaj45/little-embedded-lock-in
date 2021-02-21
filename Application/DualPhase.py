@@ -44,7 +44,7 @@ class DualPhase:
         del gui.acquired_data_ZZ[
             len(gui.acquired_data_ZZ) - int(gui.sample_per_period + gui.sample_per_period / 4):-1]
 
-        gui.dut = [d * (3.30 / 4095) for d in gui.acquired_data_YY]
+        gui.dut = [d * (3.301 / 4095) for d in gui.acquired_data_YY]
         gui.ref = [r * (3.30 / 4095) for r in gui.acquired_data_XX]
         gui.ref90 = [rd * (3.30 / 4095) for rd in gui.acquired_data_ZZ]
 
@@ -126,7 +126,7 @@ class DualPhase:
         gui.acquired_data_X = []
         gui.acquired_data_Y = []
 
-        phase_angle = -(180 * (math.atan2(mean_y_norm, mean_x_norm) / math.pi))
+        phase_angle = -(180 * (math.atan2(mean_y, mean_x) / math.pi))
         norm_of_vector = math.sqrt(mean_x ** 2 + mean_y ** 2)
         normalized_norm_of_vector = math.sqrt(mean_x_norm ** 2 + mean_y_norm ** 2)
 
@@ -154,11 +154,11 @@ class DualPhase:
             time_duration_string = string_for_time_sample.format(gui.time_sample)
 
             gui.text_to_update = "Phase = " + string_for_angle.format(phase_angle) +\
-                                 "° and  gain = " + string_for_gain.format(gain) + " dB\n" \
+                                 "°,\t Gain = " + string_for_gain.format(gain) + " dB\n" \
                                  "X: " + string_for_xy.format(mean_x) + \
-                                 ", Y: " + string_for_xy.format(mean_y) + \
+                                 ",\t Y: " + string_for_xy.format(mean_y) + \
                                  "\nU\N{SUBSCRIPT TWO} = " + string_for_u2.format(norm_of_vector) + " V" + \
-                                 ", U\N{SUBSCRIPT TWO} / U\N{SUBSCRIPT ONE} = " +\
+                                 ",\t U\N{SUBSCRIPT TWO} / U\N{SUBSCRIPT ONE} = " +\
                                  string_for_u2.format((normalized_norm_of_vector / ref_rsm)) + \
                                  "\nTime duration = {0} s".format(time_duration_string)
             gui.Gain.append(gain)
