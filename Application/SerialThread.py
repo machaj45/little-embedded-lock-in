@@ -70,7 +70,7 @@ class SerialThread(QtCore.QThread):
                     self.serial.close()
                     self.running = False
             except serial.serialutil.SerialException as e:
-                self.gui.text_to_update_3.put("HERE in comport_search()" + '\n' + str(e))
+                self.gui.text_to_update_3.put("SerialException in comport_search()" + '\n' + str(e))
                 if self.serial:
                     self.serial.close()
                     self.running = False

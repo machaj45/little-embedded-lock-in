@@ -158,7 +158,6 @@ class MainWindow(QDialog):
         self.drop_down_comports.clear()
         txt = "Available  port are: "
         for dev in serial.tools.list_ports.comports():
-
             if re.findall("STLink", str(dev)):
                 txt += ("%s" % str(dev.device) + ', ')
                 self.drop_down_comports.addItem(dev.device)

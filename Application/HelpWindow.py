@@ -25,10 +25,11 @@ class HelpWindow(QWidget):
                             "   after automatic measurements is completed you can\n"
                             "   use save as button to save data that has been measured.\n"
                             "\n"
-                            "How to select another lock-in?"
+                            "How to select another lock-in? "
                             "You can use scan button that will update dropdown at the top\n"
                             "of application then you can select comport that you want\n"
-                            "and then connect to that port using connect button.")
+                            "and then connect to that port using connect button."
+                            "For more information look at  ")
         layout.addWidget(self.label)
         self.setLayout(layout)
         self.icon = icon
