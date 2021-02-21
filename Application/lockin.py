@@ -1,10 +1,10 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
-
+import queue
 import sys
 from PyQt5.QtWidgets import QDialog, QLineEdit, QPushButton, QApplication, QGroupBox
 from PyQt5.QtWidgets import QVBoxLayout, QLabel, QHBoxLayout, QComboBox, QSlider, QFileDialog, QPlainTextEdit
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, QTimer
 from PyQt5 import QtGui
 from SquareCalculation import SquareCalculation
 from HelpWindow import HelpWindow
@@ -21,6 +21,7 @@ import os
 import urllib.request
 from bs4 import BeautifulSoup
 import socket
+import serial
 import re
 
 
@@ -54,14 +55,14 @@ class MainWindow(QDialog):
     def automatic_update_check(self):
         online_versions = self.get_online_versions()
         if len(online_versions) == 0:
-            self.plainText.insertPlainText('Unable to check version!' + '\n')
+            self.text_to_update_3.put('Unable to check version!' + '\n')
             return
         if self.gui_version == online_versions[0]:
-            self.plainText.insertPlainText('Application is update!\t version: ' + self.gui_version + '\n')
+            self.text_to_update_3.put('Application is update!\t version: ' + self.gui_version + '\n')
         else:
-            self.plainText.insertPlainText('Application needs to be updated!' + '\n')
-            self.plainText.insertPlainText('Please download newer version from:\n' +
-                                           'https://github.com/machaj45/little-embedded-lock-in/releases' + '\n')
+            self.text_to_update_3.put('Application needs to be updated!' + '\n')
+            self.text_to_update_3.put('Please download newer version from:\n' +
+                                      'https://github.com/machaj45/little-embedded-lock-in/releases' + '\n')
 
     def show_new_window(self):
         self.help_window.show()
@@ -70,7 +71,7 @@ class MainWindow(QDialog):
         self.serial_thread.running = False
         self.help_window.close()
         self.plot_window.close()
-        if self.serial_thread is not None and self.serial_thread.serial is not None:
+        if self.serial_thread is not None and self.serial_thread is not None and self.serial_thread.serial is not None:
             self.serial_thread.serial.close()
         self.reader.stop = True
         print('Window closed')
@@ -153,20 +154,33 @@ class MainWindow(QDialog):
         pass
 
     def scan(self):
-        self.serial_thread.running = False
+        self.serial_thread.available_ports.clear()
+        self.drop_down_comports.clear()
+        txt = "Available  port are: "
+        for dev in serial.tools.list_ports.comports():
+            if re.findall("STMicroelectronics STLink", str(dev)):
+                txt += ("%s" % str(dev.device) + ', ')
+                self.drop_down_comports.addItem(dev.device)
+                self.serial_thread.available_ports.append(dev.device)
+        txt = txt[:-2]
+        self.text_to_update_3.put(txt + '\n')
         pass
 
     def connect(self):
-        self.reader.in_scan_mode = True
-        available_ports = self.serial_thread.available_ports
-        self.running = False
-        self.serial_thread.running = False
-        time.sleep(0.4)
-        self.serial_thread = SerialThread(115200, self, available_ports[self.selected_comport])
-        self.running = True
-        self.serial_thread.start()
-        self.reader.serial_thread = self.serial_thread
-        self.reader.in_scan_mode = False
+        if len(self.serial_thread.available_ports) > 0:
+            self.reader.in_scan_mode = True
+            available_ports = self.serial_thread.available_ports
+            self.running = False
+            self.serial_thread.running = False
+            time.sleep(1)
+            self.serial_thread = SerialThread(115200, self, available_ports[self.selected_comport])
+            self.running = True
+            self.serial_thread.start()
+            self.reader.serial_thread = self.serial_thread
+            self.reader.in_scan_mode = False
+            self.drop_down_comports.clear()
+        else:
+            self.text_to_update_3.put("There are not available ports!")
         pass
 
     def select_st_for_sf(self):
@@ -221,7 +235,7 @@ class MainWindow(QDialog):
                 for row in csv_reader:
                     self.Freq.append(float(row[0]))
         except FileNotFoundError:
-            self.plainText.insertPlainText('FileNotFoundError load, load returning true' + '\n')
+            self.text_to_update_3.put('FileNotFoundError load, load returning true' + '\n')
             return True
         return False
 
@@ -233,7 +247,7 @@ class MainWindow(QDialog):
                 for row in csv_reader:
                     self.Freq.append(float(row[0]))
         except FileNotFoundError:
-            self.plainText.insertPlainText('File Not Found Please select valid file' + '\n')
+            self.text_to_update_3.put('File Not Found Please select valid file' + '\n')
 
     def open_file_name_dialog(self):
         options = QFileDialog.Options()
@@ -242,8 +256,8 @@ class MainWindow(QDialog):
                                                    "Table Files (*.csv)", options=options)
         if file_name:
             self.loadFileName = file_name
-            self.plainText.insertPlainText('Automatic measurement will be using frequencies from file:\n'
-                                           + self.loadFileName + '\n')
+            self.text_to_update_3.put('Automatic measurement will be using frequencies from file:\n'
+                                      + self.loadFileName + '\n')
         pass
 
     def save_file_dialog(self):
@@ -255,9 +269,9 @@ class MainWindow(QDialog):
         # print(file_name)
         if len(self.Freq) > 0:
             self.save()
-            self.plainText.insertPlainText('Data has been saved in to ' + self.saveFileName + '\n')
+            self.text_to_update_3.put('Data has been saved in to ' + self.saveFileName + '\n')
         else:
-            self.plainText.insertPlainText('No data to write to file ' + self.saveFileName + '\n')
+            self.text_to_update_3.put('No data to write to file ' + self.saveFileName + '\n')
         pass
 
     def toggle(self):
@@ -272,11 +286,13 @@ class MainWindow(QDialog):
         self.set_everything_left_gen()
 
     def do_calculation(self):
-        if self.sin_square_mode:
-            SquareCalculation.square_calculation(self)
-        else:
-            DualPhase.dual_phase_decomposition(self)
-            self.plot_window.plot_data_set()
+        if self.do_calculation_flag:
+            if self.sin_square_mode:
+                SquareCalculation.square_calculation(self)
+            else:
+                DualPhase.dual_phase_decomposition(self)
+                self.plot_window.plot_data_set()
+            self.do_calculation_flag = False
 
     @staticmethod
     def crossings_nonzero_pos2neg(data):
@@ -310,7 +326,7 @@ class MainWindow(QDialog):
             self.worker = Worker(self, self.serial_thread)
         self.button_automatic_measurement.setText("Stop Measurement")
         if self.worker.running:
-            self.button_automatic_measurement.setText("Automatic Measurement")
+            self.button_automatic_measurement_text = "Automatic Measurement"
             self.worker.stop = True
             time.sleep(1)
             self.worker = Worker(self, self.serial_thread)
@@ -345,7 +361,7 @@ class MainWindow(QDialog):
                 writer = csv.writer(file)
                 writer.writerows(row_list)
         except FileNotFoundError as e:
-            self.text_to_update_3 = str(e)
+            self.text_to_update_3.put(str(e))
         pass
 
     def read(self):
@@ -447,17 +463,24 @@ class MainWindow(QDialog):
 
     def update_text(self):
         try:
+            self.button_automatic_measurement.setText(self.button_automatic_measurement_text)
+            self.label_amplitude_left.setText(self.label_amplitude_left_text)
+            self.label_offset_left.setText(self.label_offset_left_text)
+            self.label_frequency_left.setText(self.label_frequency_left_text)
+            self.label25.setText(self.label25_text)
+            self.label26.setText(self.label26_text)
+            self.label21.setText(self.label21_text)
+            self.do_calculation()
             self.label_xy.setText(self.text_to_update)
             self.label_xy_2.setText(self.text_to_update_2)
-            """    
-            if self.plainText.verticalScrollBar().maximum() != self.last_vertical_maximum:
-                self.plainText.verticalScrollBar().setValue(self.plainText.verticalScrollBar().maximum() - 1)
-                self.last_vertical_maximum = self.plainText.verticalScrollBar().maximum()
-            """
-            if self.last_text != self.text_to_update_3 and self.plainText is not None:
-                if self.text_to_update_3 != "":
-                    self.plainText.insertPlainText(self.text_to_update_3 + '\n')
-                self.last_text = self.text_to_update_3
+
+            while not self.text_to_update_3.empty():
+                new_text = str(self.text_to_update_3.get())
+                if new_text != "":
+                    if new_text.endswith('\n'):
+                        self.plainText.insertPlainText(new_text)
+                    else:
+                        self.plainText.insertPlainText(new_text + '\n')
         except RuntimeError as a:
             print(a)
 
@@ -488,7 +511,7 @@ class MainWindow(QDialog):
         self.plot_window = PlotWindow(self)
 
         self.counter_of_drawing = 0
-        self.gui_version = 'v1.0.6'
+        self.gui_version = 'v1.0.7'
         self.fir_version = 'nop'
         self.loadFileName = 'frec.csv'
         self.saveFileName = 'data.csv'
@@ -497,6 +520,7 @@ class MainWindow(QDialog):
         self.worker = None
         self.backup1 = []
         self.backup2 = []
+        self.serial_thread_is_running = False
         self.acquired_data_YY = []
         self.plot = False
         self.frequency_gen_1 = 100
@@ -507,7 +531,7 @@ class MainWindow(QDialog):
         self.backup3 = []
         self.text_to_update = "After measurement data will be displayed here!"
         self.text_to_update_2 = "Program start"
-        self.text_to_update_3 = ""
+        self.text_to_update_3 = queue.Queue()
         self.FreqMeasured = []
         self.Gain = []
         self.automatic_measurement_is_done = False
@@ -528,7 +552,7 @@ class MainWindow(QDialog):
         self.ref90n = []
         self.X = []
         self.Y = []
-        self.last_text = ''
+
         self.Xn = []
         self.Yn = []
         self.data_bin = False
@@ -540,6 +564,15 @@ class MainWindow(QDialog):
         self.acquired_data_Z = []
         self.text = []
         self.st = 1
+
+        self.label_amplitude_left_text = "Amplitude"
+        self.label_offset_left_text = "Offset"
+        self.label_frequency_left_text = "Frequency"
+
+        self.label25_text = "Amplitude"
+        self.label26_text = "Offset"
+        self.label21_text = "Frequency"
+        self.do_calculation_flag = False
         self.layout_main_vertical = QVBoxLayout()
 
         self.layout_horizontal_connect = QHBoxLayout()
@@ -696,6 +729,7 @@ class MainWindow(QDialog):
         self.button_load.setEnabled(True)
         self.button_toggle_sin_square.setEnabled(True)
         self.button_automatic_measurement = QPushButton("Automatic Measurement")
+        self.button_automatic_measurement_text = "Automatic Measurement"
         self.button_save_as = QPushButton("Save as")
         self.button_send_command = QPushButton("Send command")
         self.button_continuous = QPushButton("Continuous")
@@ -743,10 +777,13 @@ class MainWindow(QDialog):
         self.plainText = QPlainTextEdit(self)
         self.plainText.setReadOnly(True)
         self.layout_main_vertical.addWidget(self.plainText)
+        self.timer = QTimer()
+        self.timer.timeout.connect(self.update_text)
         self.automatic_update_check()
 
 
 app = QApplication([])
 window = MainWindow()
 window.show()
+window.timer.start(100)
 sys.exit(app.exec_())

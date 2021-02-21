@@ -32,7 +32,7 @@ class Reader(QtCore.QThread):
         self.in_scan_mode = False
 
     def reading(self):
-        self.gui.plainText.insertPlainText('Data read attempt #' + str(self.number_of_readings) + '\n')
+        self.gui.text_to_update_3.put('Data read attempt #' + str(self.number_of_readings) + '\n')
         self.number_of_readings = self.number_of_readings + 1
         self.serial_thread.ser_out('DATA\n')
 
@@ -57,10 +57,14 @@ class Reader(QtCore.QThread):
             self.calculated = False
 
     def reset_serial_thread(self):
-        if self.serial_thread.serial is None and not self.in_scan_mode:
+        """
+        time.sleep(0.5)
+        if not self.in_scan_mode and not self.gui.serial_thread_is_running:
             self.serial_thread = SerialThread(115200, self.gui, None)  # Start serial thread
             self.serial_thread.start()
             self.gui.serial_thread = self.serial_thread
+            time.sleep(0.5)
+        """
         pass
 
     def con(self):
@@ -109,8 +113,6 @@ class Reader(QtCore.QThread):
         while not self.stop:
             time.sleep(0.01)
             self.counter = self.counter + 1
-            if self.counter % 5 == 0:
-                self.gui.update_text()
             if self.counter % 50 == 0 and self.read:
                 self.reading()
             if self.counter % 10 == 0:

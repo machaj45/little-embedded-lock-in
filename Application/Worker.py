@@ -23,7 +23,7 @@ class Worker(QtCore.QThread):
         self.gui.FreqMeasured = []
         self.gui.data_bin = False
         self.running = False
-        self.gui.plainText.insertPlainText('User ended automatic measurement' + '\n')
+        self.gui.text_to_update_3.put('User ended automatic measurement' + '\n')
 
     def run(self):
         self.running = True
@@ -49,7 +49,7 @@ class Worker(QtCore.QThread):
                 fr = float(self.gui.last_data)
                 self.gui.Freq[i] = fr
             except ValueError:
-                self.gui.plainText.insertPlainText('ValueError in run in worker' + '\n')
+                self.gui.text_to_update_3.put('ValueError in run in worker' + '\n')
                 fr = f
 
             self.gui.sf = int(self.gui.sample_per_period * fr)
@@ -85,46 +85,46 @@ class Worker(QtCore.QThread):
                 a = 4095
             self.serial_thread.ser_out(str(int(a)) + "\n")
             if self.stop:
-                self.gui.plainText.insertPlainText('Automatic Measurement Has been Stopped by user' + '\n')
+                self.gui.text_to_update_3.put('Automatic Measurement Has been Stopped by user' + '\n')
                 break
             time.sleep(2)
             if self.stop:
-                self.gui.plainText.insertPlainText('Automatic Measurement Has been Stopped by user' + '\n')
+                self.gui.text_to_update_3.put('Automatic Measurement Has been Stopped by user' + '\n')
                 break
 
             self.gui.text_to_update_1 = str(self.gui.text)
 
             self.gui.text = []
-            self.gui.plainText.insertPlainText('Frequency send: ' + str(f) +
-                                               ' Hz, Real frequency is: ' + str(fr) + ' Hz' + '\n')
+            self.gui.text_to_update_3.put('Frequency send: ' + str(f) +
+                                          ' Hz, Real frequency is: ' + str(fr) + ' Hz' + '\n')
             self.serial_thread.ser_out("MEAS\n")
             time_sample = 10000 / self.gui.sf
             if self.stop:
-                self.gui.plainText.insertPlainText('Automatic Measurement Has been Stopped by user' + '\n')
+                self.gui.text_to_update_3.put('Automatic Measurement Has been Stopped by user' + '\n')
                 break
             time.sleep(time_sample + 1)
             if self.stop:
-                self.gui.plainText.insertPlainText('Automatic Measurement Has been Stopped by user' + '\n')
+                self.gui.text_to_update_3.put('Automatic Measurement Has been Stopped by user' + '\n')
                 break
             self.serial_thread.ser_out("DATA\n")
             # time.sleep(2)
             if self.stop:
-                self.gui.plainText.insertPlainText('Automatic Measurement Has been Stopped by user' + '\n')
+                self.gui.text_to_update_3.put('Automatic Measurement Has been Stopped by user' + '\n')
                 break
             time.sleep(7)
             if self.stop:
-                self.gui.plainText.insertPlainText('Automatic Measurement Has been Stopped by user' + '\n')
+                self.gui.text_to_update_3.put('Automatic Measurement Has been Stopped by user' + '\n')
                 break
             while not self.gui.data_done:
                 self.serial_thread.ser_out("DATA\n")
                 if self.stop:
-                    self.gui.plainText.insertPlainText('Automatic Measurement Has been Stopped by user' + '\n')
+                    self.gui.text_to_update_3.put('Automatic Measurement Has been Stopped by user' + '\n')
                     break
                 time.sleep(1)
             self.gui.data_done = False
-        self.gui.plainText.insertPlainText('Automatic Measurement is now complete!\n'
-                                           'Please save your data using Save as button!\n')
-        self.gui.button_automatic_measurement.setText("Automatic Measurement")
+        self.gui.text_to_update_3.put('Automatic Measurement is now complete!\n' +
+                                      'Please save your data using Save as button!\n')
+        self.gui.button_automatic_measurement_text = "Automatic Measurement"
         self.f = None
         if not self.stop:
             self.gui.automatic_measurement_is_done = True
