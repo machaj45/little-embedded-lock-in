@@ -73,16 +73,17 @@ class MainWindow(QDialog):
         self.serial_thread.running = False
         self.help_window.close()
         self.plot_window.close()
-        if self.serial_thread is not None and self.serial_thread is not None and self.serial_thread.serial is not None:
+        if self.serial_thread is not None and self.serial_thread.serial is not None and self.serial_thread.serial:
             self.serial_thread.serial.close()
         self.reader.stop = True
+        self.serial_thread.running = False
         print('Window closed')
 
     def on_edit_change_frequency_left(self):
         if self.edit_frequency_left.text() != "":
             a = float(self.edit_frequency_left.text())
             if 0 < a <= 130000:
-                self.slider_frequency_left.setValue(float(self.edit_frequency_left.text()))
+                self.slider_frequency_left.setValue(int(self.edit_frequency_left.text()))
                 self.sf = int(self.sample_per_period * a)
                 self.st = self.select_st_for_sf()
                 self.frequency_gen_1 = a
