@@ -11,7 +11,7 @@ class HelpWindow(QWidget):
     def __init__(self, icon):
         super().__init__()
         layout = QVBoxLayout()
-        layout.setContentsMargins(0,210,0,110)
+        layout.setContentsMargins(0,210,0,50)
         self.label = QLabel()
         self.label_link = QLabel()
 
@@ -33,6 +33,11 @@ class HelpWindow(QWidget):
                            "You can use scan button that will update dropdown at the top\n"
                            "of application then you can select comport that you want\n"
                            "and then connect to that port using connect button.\n\n"
+                           "PIN OUT\n"
+                           "A5 - ref in\n"
+                           "A4 - dut in\n"
+                           "A2 - gen channel 1\n"
+                           "D13 - gen channel 2\n\n"
                            "For more information look at:\n"
                            )
         url_link = "<a href=\"https://github.com/machaj45/little-embedded-lock-in/blob/main/Manual/manual.pdf\">Manual PDF</a>"

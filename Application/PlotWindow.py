@@ -12,7 +12,7 @@ class PlotWindow(QWidget):
         self.setLayout(self.layout)
         self.setWindowTitle("Plot")
         self.graphWidget = pyqtgraph.PlotWidget()
-        self.graphWidget.setMouseEnabled(x=False, y=False)
+        # self.graphWidget.setMouseEnabled(x=False, y=False)
         self.layout.addWidget(self.graphWidget)
         self.gui = gui
         self.mode_nr = True
@@ -59,7 +59,7 @@ class PlotWindow(QWidget):
                                   pen=pyqtgraph.mkPen(color=(0, 255, 0)), name='ref_norm(t)')
             if self.gui.sin_square_mode:
                 self.graphWidget.plot([x * 1 / self.gui.sf for x in range(0, len(self.gui.X))], self.gui.X,
-                                      pen=pyqtgraph.mkPen(color=(0, 100, 255), style=Qt.DotLine), name='U2')
+                                      pen=pyqtgraph.mkPen(color=(0, 100, 255)), name='U2')
             if not self.gui.sin_square_mode:
                 self.graphWidget.plot([x * 1 / self.gui.sf for x in range(0, len(self.gui.ref90_norm))],
                                       self.gui.ref90_norm,
@@ -72,10 +72,10 @@ class PlotWindow(QWidget):
                                   pen=pyqtgraph.mkPen(color=(0, 255, 0)), name='ref(t)')
             if self.gui.sin_square_mode:
                 self.graphWidget.plot([x * 1 / self.gui.sf for x in range(0, len(self.gui.X))], self.gui.X,
-                                      pen=pyqtgraph.mkPen(color=(0, 100, 255), style=Qt.DotLine), name='U2')
+                                      pen=pyqtgraph.mkPen(color=(0, 100, 255)), name='U2')
             if not self.gui.sin_square_mode:
                 self.graphWidget.plot([x * 1 / self.gui.sf for x in range(0, len(self.gui.ref90))],
                                       self.gui.ref90,
                                       pen=pyqtgraph.mkPen(color=(0, 100, 255)), name='ref(t+90°)')
         self.graphWidget.addLegend()
-        self.graphWidget.setMouseEnabled(x=True, y=True)
+        # self.graphWidget.setMouseEnabled(x=True, y=True)

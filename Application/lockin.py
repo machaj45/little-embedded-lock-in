@@ -84,9 +84,7 @@ class MainWindow(QDialog):
                 self.slider_frequency_left.setValue(float(self.edit_frequency_left.text()))
                 self.sf = int(self.sample_per_period * a)
                 self.st = self.select_st_for_sf()
-                self.label_spp.setText(
-                    "Samples per period = {0} [-], Sampling frequency = {1} [Hz], Sampling Time = {2:.3f} [us]".format(
-                        int(self.sample_per_period), self.sf, self.st))
+                self.label_spp_text = "Samples per period = {0} [-], Sampling frequency = {1} [Hz], Sampling Time = {2:.3f} [us]".format(int(self.sample_per_period), self.sf,self.st)
             else:
                 self.edit_frequency_left.setText("1")
 
@@ -222,9 +220,7 @@ class MainWindow(QDialog):
         ssp = float(2 ** i)
         self.sf = int(ssp * self.frequency_gen_1)
         self.st = self.select_st_for_sf()
-        self.label_spp.setText(
-            "Samples per period = {0} [-], Sampling frequency = {1} [Hz], Sampling Time = {2:.3f} [us]".format(
-                int(ssp), self.sf, self.st))
+        self.label_spp_text = "Samples per period = {0} [-], Sampling frequency = {1} [Hz], Sampling Time = {2:.3f} [us]".format(int(ssp), self.sf, self.st)
 
     def send_command(self):
         self.button_setup_left.setEnabled(True)
@@ -296,7 +292,7 @@ class MainWindow(QDialog):
                 SquareCalculation.square_calculation(self)
             else:
                 DualPhase.dual_phase_decomposition(self)
-                self.plot_window.plot_data_set()
+            self.plot_window.plot_data_set()
             self.do_calculation_flag = False
 
     @staticmethod
@@ -424,7 +420,7 @@ class MainWindow(QDialog):
         self.serial_thread.ser_out("1\n")
 
     def set_everything_left_gen(self):
-        self.plot_window.graphWidget.setMouseEnabled(x=False, y=False)
+        # self.plot_window.graphWidget.setMouseEnabled(x=False, y=False)
         self.data_bin = False
         self.serial_thread.send_all_counter = 0
         self.serial_thread.b = 0
@@ -447,7 +443,7 @@ class MainWindow(QDialog):
         self.serial_thread.ser_out(str(int(a)) + "\n")
 
     def set_everything1(self):
-        self.plot_window.graphWidget.setMouseEnabled(x=False, y=False)
+        # self.plot_window.graphWidget.setMouseEnabled(x=False, y=False)
         self.text = []
         self.serial_thread.send_all_counter = 0
         self.button23.setEnabled(False)
@@ -475,6 +471,7 @@ class MainWindow(QDialog):
             self.label25.setText(self.label25_text)
             self.label26.setText(self.label26_text)
             self.label21.setText(self.label21_text)
+            self.label_spp.setText(self.label_spp_text)
             self.do_calculation()
             self.label_xy.setText(self.text_to_update)
             self.label_xy_2.setText(self.text_to_update_2)
@@ -568,12 +565,13 @@ class MainWindow(QDialog):
         self.last_vertical_maximum = 0
         self.acquired_data_Z = []
         self.text = []
+        self.number_of_used_samples = 0
         self.st = 1
 
         self.label_amplitude_left_text = "Amplitude"
         self.label_offset_left_text = "Offset"
         self.label_frequency_left_text = "Frequency"
-
+        self.label_spp_text = "Samples per period"
         self.label25_text = "Amplitude"
         self.label26_text = "Offset"
         self.label21_text = "Frequency"
@@ -787,6 +785,7 @@ class MainWindow(QDialog):
         self.automatic_update_check()
         self.serial_thread.start()
         self.reader.start()
+
 
 app = QApplication([])
 window = MainWindow()

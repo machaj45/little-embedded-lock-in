@@ -114,6 +114,7 @@ class DualPhase:
             gui.Yn.append(gui.dut[i] * gui.ref90_norm[i])
         mean_x_norm = 0
         mean_y_norm = 0
+        gui.number_of_used_samples = length_of_calculation
         if len(gui.X) > 0:
             mean_x = statistics.mean(gui.X)
             mean_y = statistics.mean(gui.Y)
@@ -160,7 +161,8 @@ class DualPhase:
                                  "\nU\N{SUBSCRIPT TWO} = " + string_for_u2.format(normalized_norm_of_vector) + " V" + \
                                  ",\t U\N{SUBSCRIPT TWO} / U\N{SUBSCRIPT ONE} = " +\
                                  string_for_u2.format((normalized_norm_of_vector / ref_rsm)) + \
-                                 "\nTime duration = {0} s".format(time_duration_string)
+                                 "\nTime duration = {0} s, Number of samples = {1}".format(time_duration_string,
+                                                                                           gui.number_of_used_samples)
             gui.Gain.append(gain)
         else:
             gui.text_to_update = "Phase = " + string_for_angle.format(phase_angle) + "° and  gain = -Inf " + \

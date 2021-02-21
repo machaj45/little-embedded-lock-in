@@ -90,6 +90,7 @@ class SerialThread(QtCore.QThread):
         self.gui.label_offset_left_text = "Offset - {0} mV".format(a)
         self.gui.label_frequency_left_text = "Frequency - {0} Hz".format(self.gui.text[1][:-1])
         self.gui.frequency_gen_1 = float(self.gui.text[1][:-1])
+        self.gui.label_spp_text = "Samples per period = {0} [-], Sampling frequency = {1} [Hz], Sampling Time = {2:.3f} [us]".format(int(self.gui.sample_per_period),self.gui.sample_per_period * self.gui.frequency_gen_1, self.gui.st)
         self.gui.button_setup_left.setEnabled(True)
 
     def set_right_gen_gui(self):

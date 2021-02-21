@@ -119,9 +119,5 @@ class Reader(QtCore.QThread):
                 self.single()
                 self.con()
                 self.reset_serial_thread()
-                self.gui.label_spp.setText(
-                    "Samples per period = {0} [-], Sampling frequency = {1} [Hz], Sampling Time = {2:.3f} [us]".format(
-                        int(self.gui.sample_per_period), self.gui.sample_per_period * self.gui.frequency_gen_1,
-                        self.gui.st))
             if self.counter >= 1000000:
                 self.counter = 0
