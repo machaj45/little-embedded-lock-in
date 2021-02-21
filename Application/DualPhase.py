@@ -149,7 +149,7 @@ class DualPhase:
             number_of_digits_for_xy = int(abs(math.log10(abs(mean_x)))) + 4
             string_for_xy = "{:." + str(number_of_digits_for_xy) + "f}"
 
-            number_of_digits_for_time_sample = int(abs(math.log10(abs(gui.time_sample)))) + 4
+            number_of_digits_for_time_sample = int(abs(math.log10(abs(gui.time_sample)))) + 3
             string_for_time_sample = "{:." + str(number_of_digits_for_time_sample) + "f}"
             time_duration_string = string_for_time_sample.format(gui.time_sample)
 
@@ -157,7 +157,7 @@ class DualPhase:
                                  "°,\t Gain = " + string_for_gain.format(gain) + " dB\n" \
                                  "X: " + string_for_xy.format(mean_x) + \
                                  ",\t Y: " + string_for_xy.format(mean_y) + \
-                                 "\nU\N{SUBSCRIPT TWO} = " + string_for_u2.format(norm_of_vector) + " V" + \
+                                 "\nU\N{SUBSCRIPT TWO} = " + string_for_u2.format(normalized_norm_of_vector) + " V" + \
                                  ",\t U\N{SUBSCRIPT TWO} / U\N{SUBSCRIPT ONE} = " +\
                                  string_for_u2.format((normalized_norm_of_vector / ref_rsm)) + \
                                  "\nTime duration = {0} s".format(time_duration_string)

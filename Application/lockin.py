@@ -494,9 +494,8 @@ class MainWindow(QDialog):
 
         self.selected_comport = 0
         self.serial_thread = SerialThread(115200, self, None)  # Start serial thread
-        self.serial_thread.start()
+
         self.reader = Reader(self, self.serial_thread)  # Start reading thread
-        self.reader.start()
 
         super(MainWindow, self).__init__(parent)
         font = self.font()
@@ -786,7 +785,8 @@ class MainWindow(QDialog):
         self.timer = QTimer()
         self.timer.timeout.connect(self.update_text)
         self.automatic_update_check()
-
+        self.serial_thread.start()
+        self.reader.start()
 
 app = QApplication([])
 window = MainWindow()

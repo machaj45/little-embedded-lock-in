@@ -1,5 +1,6 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
+import math
 
 import serial
 import time
@@ -50,7 +51,7 @@ class SerialThread(QtCore.QThread):
             self.serial.port = i.device
             try:
                 with self.serial as s:
-                    time.sleep(0.5)
+                    # time.sleep(0.5)
                     s.write(b'IDN?\n')
                     s.flush()
                     data = s.read(size=18)
@@ -79,8 +80,8 @@ class SerialThread(QtCore.QThread):
         return self.available_ports
 
     def set_left_gen_gui(self):
-        self.gui.label_amplitude_left_text = "Amplitude - {0} %, Upp = {1} mV".format(self.gui.text[0][:-2], int(
-            3300 * (float(self.gui.text[0][:-2]) / 100)))
+        upp = int(3300 * (float(self.gui.text[0][:-2]) / 100))
+        self.gui.label_amplitude_left_text = "Amplitude - {0} %, Upp = {1} mV, Uef = {2} mV".format(self.gui.text[0][:-2], upp,int((upp/2)/math.sqrt(2)))
         a = int(3300 * (float(self.gui.text[2][:-1]) / (2 ** 12)))
         if a == 0:
             a = 0
@@ -92,8 +93,8 @@ class SerialThread(QtCore.QThread):
         self.gui.button_setup_left.setEnabled(True)
 
     def set_right_gen_gui(self):
-        self.gui.label25_text = "Amplitude - {0} %, Upp = {1} mV".format(self.gui.text[0][:-2], int(
-            3300 * (float(self.gui.text[0][:-2]) / 100)))
+        upp = int(3300 * (float(self.gui.text[0][:-2]) / 100))
+        self.gui.label25_text = "Amplitude - {0} %, Upp = {1} mV, Uef = {2} mV".format(self.gui.text[0][:-2],upp , int((upp/2)/math.sqrt(2)))
         a = int(3300 * (float(self.gui.text[2][:-1]) / (2 ** 12))) + 1
         if a == 1:
             a = 0
@@ -204,7 +205,6 @@ class SerialThread(QtCore.QThread):
         return checkout
 
     def run(self):
-        time.sleep(1)
         self.running = True
         self.gui.text_to_update_3.put("Start of serial Thread")
         self.gui.serial_thread_is_running = True
