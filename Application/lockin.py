@@ -1,5 +1,6 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
+import math
 import queue
 import sys
 
@@ -84,9 +85,10 @@ class MainWindow(QDialog):
                 self.slider_frequency_left.setValue(float(self.edit_frequency_left.text()))
                 self.sf = int(self.sample_per_period * a)
                 self.st = self.select_st_for_sf()
-                self.label_spp_text = "Samples per period = {0} [-], Sampling frequency = {1} [Hz], Sampling Time = {2:.3f} [us]".format(int(self.sample_per_period), self.sf,self.st)
+                self.frequency_gen_1 = a
             else:
                 self.edit_frequency_left.setText("1")
+                self.frequency_gen_1 = 1
 
     def on_edit_change_amplitude_left(self):
         if self.edit_amplitude_left.text() != "":
@@ -130,6 +132,9 @@ class MainWindow(QDialog):
 
     def on_slider_change_frequency_left(self, value):
         self.edit_frequency_left.setText(str(value))
+        if value == 0:
+            value = 1
+        self.frequency_gen_1 = value
         pass
 
     def on_slider_change_amplitude_left(self, value):
@@ -204,6 +209,8 @@ class MainWindow(QDialog):
             st = 2.5 * cct
         if 4810996 < self.sf <= 5154639:
             st = 1.5 * cct
+        if st == 1:
+            self.text_to_update_3.put("Error maximum sampling time exceeded please lover frequency or sample per period")
         return st
 
     def comports(self, i):
@@ -220,7 +227,7 @@ class MainWindow(QDialog):
         ssp = float(2 ** i)
         self.sf = int(ssp * self.frequency_gen_1)
         self.st = self.select_st_for_sf()
-        self.label_spp_text = "Samples per period = {0} [-], Sampling frequency = {1} [Hz], Sampling Time = {2:.3f} [us]".format(int(ssp), self.sf, self.st)
+
 
     def send_command(self):
         self.button_setup_left.setEnabled(True)
@@ -471,6 +478,9 @@ class MainWindow(QDialog):
             self.label25.setText(self.label25_text)
             self.label26.setText(self.label26_text)
             self.label21.setText(self.label21_text)
+            self.rm = (9.0 * self.st * math.pow(10.0, -6)) / (5.0 * math.pow(10.0, -12))
+            self.label_spp_text = "Samples per period = {0} [-], Sampling frequency = {1} [Hz], Sampling Time = {2:.3f} [us], Rin_max = {3} [Ohm]".format(
+                int(self.sample_per_period), self.sample_per_period * self.frequency_gen_1, self.st, int(self.rm))
             self.label_spp.setText(self.label_spp_text)
             self.do_calculation()
             self.label_xy.setText(self.text_to_update)
@@ -554,7 +564,7 @@ class MainWindow(QDialog):
         self.ref90_norm = []
         self.X = []
         self.Y = []
-
+        self.rm = 10000
         self.Xn = []
         self.Yn = []
         self.data_bin = False

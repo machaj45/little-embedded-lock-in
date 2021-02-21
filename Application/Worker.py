@@ -72,6 +72,9 @@ class Worker(QtCore.QThread):
                 st = 2.5 * cct
             if 4810996 < self.sf <= 5154639:
                 st = 1.5 * cct
+            if st == 1:
+                self.gui.text_to_update_3.put(
+                    "Error maximum sampling time exceeded please lover frequency or sample per period")
             if self.gui.sin_square_mode:
                 self.gui.Phase.append(st)
 
