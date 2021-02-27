@@ -4,7 +4,11 @@ import time
 
 
 class DualPhase:
-
+    appending = True
+    dut = []
+    ref = []
+    ref90 = []
+    last_ref_rsm = 1
     @staticmethod
     def start_pd(gui):
         a = 0
@@ -44,9 +48,20 @@ class DualPhase:
         del gui.acquired_data_ZZ[
             len(gui.acquired_data_ZZ) - int(gui.sample_per_period + gui.sample_per_period / 4):-1]
 
+        if gui.reader.con_running:
+            DualPhase.dut = gui.dut
+            DualPhase.ref = gui.ref
+            DualPhase.ref90 = gui.ref90
+
         gui.dut = [d * (3.301 / 4095) for d in gui.acquired_data_YY]
         gui.ref = [r * (3.30 / 4095) for r in gui.acquired_data_XX]
         gui.ref90 = [rd * (3.30 / 4095) for rd in gui.acquired_data_ZZ]
+
+    @staticmethod
+    def get_rid_of_mean(data : list):
+        mean_value = statistics.mean(data)
+        for i in range(len(data)):
+            data[i] = data[i]-mean_value
 
     @staticmethod
     def dual_phase_decomposition(gui, string_for_angle=None, string_for_xy=None):
@@ -80,18 +95,35 @@ class DualPhase:
             del gui.ref90[length_of_ref:-1]
             del gui.dut[length_of_ref:-1]
 
+        del gui.dut[-1]
+        del gui.ref[-1]
+        del gui.ref90[-1]
+
+        if gui.reader.con_running:
+            if len(gui.ref90) > 0 and len(DualPhase.ref90) > 0 and abs(DualPhase.ref90[-1]-gui.ref90[0]) > DualPhase.last_ref_rsm:
+                del gui.dut[0:int(gui.sample_per_period / 2)]
+                del gui.ref[0:int(gui.sample_per_period / 2)]
+                del gui.ref90[0:int(gui.sample_per_period / 2)]
+                gui.text_to_update_3.put("triming")
+            DualPhase.dut.extend(gui.dut)
+            DualPhase.ref.extend(gui.ref)
+            DualPhase.ref90.extend(gui.ref90)
+            gui.dut = DualPhase.dut
+            gui.ref = DualPhase.ref
+            gui.ref90 = DualPhase.ref90
+
+        DualPhase.get_rid_of_mean(gui.dut)
+        DualPhase.get_rid_of_mean(gui.ref)
+        DualPhase.get_rid_of_mean(gui.ref90)
+
         gui.ref_norm = [r ** 2 for r in gui.ref]
         mrs_norm_ref = math.sqrt(statistics.mean(gui.ref_norm))
         gui.ref_norm = [r / mrs_norm_ref for r in gui.ref]
         gui.ref90_norm = [r ** 2 for r in gui.ref90]
         mrs_norm_ref_90 = math.sqrt(statistics.mean(gui.ref90_norm))
         gui.ref90_norm = [r / mrs_norm_ref_90 for r in gui.ref90]
-
-        del gui.dut[-1]
-        del gui.ref[-1]
-        del gui.ref90[-1]
-        del gui.ref_norm[-1]
-        del gui.ref90_norm[-1]
+        DualPhase.get_rid_of_mean(gui.ref_norm)
+        DualPhase.get_rid_of_mean(gui.ref90_norm)
 
         ref_length = len(gui.ref)
         gui.time_sample = ref_length / gui.sf
@@ -127,7 +159,7 @@ class DualPhase:
         gui.acquired_data_X = []
         gui.acquired_data_Y = []
 
-        phase_angle = -(180 * (math.atan2(mean_y, mean_x) / math.pi))
+        phase_angle = -(180 * (math.atan2(mean_y_norm, mean_x_norm) / math.pi))
         norm_of_vector = math.sqrt(mean_x ** 2 + mean_y ** 2)
         normalized_norm_of_vector = math.sqrt(mean_x_norm ** 2 + mean_y_norm ** 2)
 
@@ -137,7 +169,7 @@ class DualPhase:
             else:
                 ref_rsm = 1
             gain = 20 * math.log10((normalized_norm_of_vector / ref_rsm))
-
+            DualPhase.last_ref_rsm = ref_rsm
             number_of_digits_for_angle = int(abs(math.log10(abs(phase_angle)))) + 4
             string_for_angle = "{:." + str(number_of_digits_for_angle) + "f}"
 

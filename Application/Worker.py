@@ -28,13 +28,14 @@ class Worker(QtCore.QThread):
     def run(self):
         self.running = True
         self.stop = False
+        self.gui.text_to_update_3.put("Worker started")
         self.gui.text = []
         self.gui.Gain = []
         self.gui.Phase = []
         self.gui.FreqMeasured = []
-        while self.gui.load():
-            time.sleep(2)
-            pass
+        if self.gui.load():
+            return
+
         self.gui.text_to_update = 'Automatic Measurement Has Begun'
         i = 0
         for f in self.gui.Freq:
@@ -131,3 +132,4 @@ class Worker(QtCore.QThread):
         self.f = None
         if not self.stop:
             self.gui.automatic_measurement_is_done = True
+        self.gui.text_to_update_3.put("Worker Ended")

@@ -12,7 +12,7 @@ SER_TIMEOUT = 0.08
 
 
 class SerialThread(QtCore.QThread):
-    def __init__(self, baud_rate, gui, comport):  # Initialise with serial port details
+    def __init__(self, baud_rate, gui, comport=None):  # Initialise with serial port details
         QtCore.QThread.__init__(self)
         self.baud_rate = baud_rate
         self.data_out_queue = queue.Queue()
@@ -39,12 +39,12 @@ class SerialThread(QtCore.QThread):
         pass
 
     def initialize_run_method(self):
-            self.serial = serial.Serial(baudrate=self.baud_rate, bytesize=serial.EIGHTBITS, parity=serial.PARITY_NONE,
-                                        stopbits=serial.STOPBITS_ONE, timeout=SER_TIMEOUT, write_timeout=0.01)
-            self.count = 1
-            self.available_ports = []
-            self.send_all_counter = 0
-            self.counter_of_dnr_answers = 0
+        self.serial = serial.Serial(baudrate=self.baud_rate, bytesize=serial.EIGHTBITS, parity=serial.PARITY_NONE,
+                                    stopbits=serial.STOPBITS_ONE, timeout=SER_TIMEOUT, write_timeout=0.01)
+        self.count = 1
+        self.available_ports = []
+        self.send_all_counter = 0
+        self.counter_of_dnr_answers = 0
 
     def comport_search(self):
         for i in serial.tools.list_ports.comports():
@@ -72,16 +72,17 @@ class SerialThread(QtCore.QThread):
                     self.running = False
             except serial.serialutil.SerialException as e:
                 self.gui.text_to_update_3.put("SerialException in comport_search()" + '\n' + str(e))
-                if self.serial:
+                """if self.serial:
                     self.serial.close()
                     self.running = False
                 break
-
+                """
         return self.available_ports
 
     def set_left_gen_gui(self):
         upp = int(3300 * (float(self.gui.text[0][:-2]) / 100))
-        self.gui.label_amplitude_left_text = "Amplitude - {0} %, Upp = {1} mV, Uef = {2} mV".format(self.gui.text[0][:-2], upp,int((upp/2)/math.sqrt(2)))
+        self.gui.label_amplitude_left_text = "Amplitude - {0} %, Upp = {1} mV, Uef = {2} mV".format(
+            self.gui.text[0][:-2], upp, int((upp / 2) / math.sqrt(2)))
         a = int(3300 * (float(self.gui.text[2][:-1]) / (2 ** 12)))
         if a == 0:
             a = 0
@@ -95,7 +96,8 @@ class SerialThread(QtCore.QThread):
 
     def set_right_gen_gui(self):
         upp = int(3300 * (float(self.gui.text[0][:-2]) / 100))
-        self.gui.label25_text = "Amplitude - {0} %, Upp = {1} mV, Uef = {2} mV".format(self.gui.text[0][:-2],upp , int((upp/2)/math.sqrt(2)))
+        self.gui.label25_text = "Amplitude - {0} %, Upp = {1} mV, Uef = {2} mV".format(self.gui.text[0][:-2], upp,
+                                                                                       int((upp / 2) / math.sqrt(2)))
         a = int(3300 * (float(self.gui.text[2][:-1]) / (2 ** 12))) + 1
         if a == 1:
             a = 0
@@ -208,13 +210,13 @@ class SerialThread(QtCore.QThread):
     def run(self):
         self.running = True
         self.gui.text_to_update_3.put("Start of serial Thread")
+        self.gui.button_connect.setEnabled(False)
         self.gui.serial_thread_is_running = True
         data_out_queue_string = ''
         self.initialize_run_method()
         t_comport = None
         if self.comport is not None:
             t_comport = self.comport
-
         while len(self.available_ports) == 0 and self.running:
             self.available_ports = self.comport_search()
             if len(self.available_ports) > 0:
@@ -251,7 +253,8 @@ class SerialThread(QtCore.QThread):
         if not self.serial:
             print("Can't open port")
             self.running = False
-
+        self.gui.connecteSet(True)
+        self.gui.connecteSet(True)
         while self.running:
             try:
                 with self.serial as s:
@@ -268,6 +271,7 @@ class SerialThread(QtCore.QThread):
             except serial.serialutil.SerialException:
                 self.gui.text_to_update_3.put("SerialException in running enabling send all \
                                                button and waiting\n")
+                self.gui.connecteSet(False)
                 if self.serial:
                     self.serial.close()
                     self.running = False

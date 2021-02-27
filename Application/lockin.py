@@ -159,37 +159,60 @@ class MainWindow(QDialog):
         pass
 
     def scan(self):
+        self.connecteSet(False)
         self.serial_thread.available_ports.clear()
         self.drop_down_comports.clear()
-        txt = "Available  port are: "
+        self.serial_thread.running = False
+        time.sleep(0.5)
+        txt = "Ports are: "
+        i = 0
+        self.available_ports.clear()
         for dev in serial.tools.list_ports.comports():
             if re.findall("STLink", str(dev)):
-                txt += ("%s" % str(dev.device) + ', ')
-                self.drop_down_comports.addItem(dev.device)
-                self.serial_thread.available_ports.append(dev.device)
+                try:
+                    ser = serial.Serial(port=dev.device)
+                    ser.close()
+                    txt += ("%s" % str(dev.device) + ', ')
+                    self.drop_down_comports.addItem(dev.device)
+                    self.available_ports[dev.device] = True
+                except serial.SerialException:
+                    txt += ("%s" % str(dev.device) + ' - in use' + ', ')
+                    self.drop_down_comports.addItem(dev.device + ' - in use')
+                    self.available_ports[dev.device] = False
+                    self.drop_down_comports.model().item(i).setEnabled(False)
+                    pass
+                i = i + 1
+
         txt = txt[:-2]
-        if len(self.serial_thread.available_ports) > 0:
+        if len(self.available_ports) > 0:
             self.text_to_update_3.put(txt + '\n')
+            self.button_connect.setEnabled(True)
         else:
             self.text_to_update_3.put("There are no available ports" + '\n')
+            self.button_connect.setEnabled(False)
         pass
 
     def connect(self):
-        if len(self.serial_thread.available_ports) > 0:
-            self.reader.in_scan_mode = True
-            available_ports = self.serial_thread.available_ports
-            self.running = False
-            self.serial_thread.running = False
-            time.sleep(1)
-            self.serial_thread = SerialThread(115200, self, available_ports[self.selected_comport])
-            self.running = True
-            self.serial_thread.start()
-            self.reader.serial_thread = self.serial_thread
-            self.reader.in_scan_mode = False
-            self.drop_down_comports.clear()
+        if len(self.available_ports) > 0:
+            dev = list(self.available_ports.keys())[self.selected_comport]
+            if self.available_ports[dev]:
+                self.serial_thread = SerialThread(115200, self, dev)
+                self.available_ports[dev] = False
+                self.running = True
+                self.serial_thread.start()
+                self.reader.serial_thread = self.serial_thread
+                #self.drop_down_comports.clear()
+
         else:
             self.text_to_update_3.put("There are not available ports!")
         pass
+
+    def connecteSet(self,enable : bool):
+        self.group_box_left_gen.setEnabled(enable)
+        self.group_box_right_gen.setEnabled(enable)
+        self.group_box_ssp.setEnabled(enable)
+        self.group_box_out.setEnabled(enable)
+
 
     def select_st_for_sf(self):
         cct = 0.194 / 14.0
@@ -343,7 +366,6 @@ class MainWindow(QDialog):
             self.worker = Worker(self, self.serial_thread)
             self.running = True
             self.stop = False
-            self.open_file_name_dialog()
             self.worker.start()
         if self.automatic_measurement_is_done:
             self.automatic_measurement_is_done = False
@@ -524,7 +546,7 @@ class MainWindow(QDialog):
         self.plot_window = PlotWindow(self)
 
         self.counter_of_drawing = 0
-        self.gui_version = 'v1.0.7'
+        self.gui_version = 'v1.0.8'
         self.fir_version = 'nop'
         self.loadFileName = 'frec.csv'
         self.saveFileName = 'data.csv'
@@ -559,6 +581,7 @@ class MainWindow(QDialog):
         self.data_ready = False
         self.dut = []
         self.ref = []
+        self.available_ports = {}
         self.running = None
         self.ref90 = []
         self.ref_norm = []
@@ -744,7 +767,8 @@ class MainWindow(QDialog):
         self.button_toggle_sin_square.setEnabled(True)
         self.button_automatic_measurement = QPushButton("Automatic Measurement")
         self.button_automatic_measurement_text = "Automatic Measurement"
-        self.button_save_as = QPushButton("Save as")
+        self.button_save_as = QPushButton("Save")
+        self.button_load = QPushButton("Load")
         self.button_send_command = QPushButton("Send command")
         self.button_continuous = QPushButton("Continuous")
         self.button_single = QPushButton("Single")
@@ -755,6 +779,7 @@ class MainWindow(QDialog):
         self.button_draw_data.clicked.connect(self.open_plot_window)
         self.button_automatic_measurement.clicked.connect(self.start_stop_measurement)
         self.button_save_as.clicked.connect(self.save_file_dialog)
+        self.button_load.clicked.connect(self.open_file_name_dialog)
         self.button_send_command.clicked.connect(self.send_command)
         self.drop_down_spp = QComboBox()
         for i in range(3, 11):
@@ -774,6 +799,7 @@ class MainWindow(QDialog):
         self.layout_horizontal_bottom.addWidget(self.button_single)
         self.layout_horizontal_bottom.addWidget(self.button_toggle_sin_square)
         self.layout_horizontal_bottom.addWidget(self.button_draw_data)
+        self.layout_horizontal_bottom.addWidget(self.button_load)
         self.layout_horizontal_bottom.addWidget(self.button_automatic_measurement)
         self.layout_horizontal_bottom.addWidget(self.button_save_as)
         self.layout_horizontal_bottom.addWidget(self.button_send_command)
@@ -793,6 +819,7 @@ class MainWindow(QDialog):
         self.layout_main_vertical.addWidget(self.plainText)
         self.timer = QTimer()
         self.timer.timeout.connect(self.update_text)
+        self.connecteSet(False)
         self.automatic_update_check()
         self.serial_thread.start()
         self.reader.start()
