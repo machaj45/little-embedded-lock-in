@@ -6,12 +6,6 @@ Main manual is in this repository in pdf format that gives clear information how
 Please report any issues that bothers you in issue section of this repository or on email jmachalek@seznam.cz
 Thank you in advance.
 ## Known Issues 
-  - PyQt5 is missing library on ubuntu 20.10 called **libxcb-xinerama0** 
-    - solution: 
-      - install that library to your system
-      ```
-      sudo apt install libxcb-xinerama0 
-      ```
   - Pyserial needs **permmision** on ubuntu for accesing usb ports
     - solution:
       - use user group to give your self priviliages
@@ -19,3 +13,10 @@ Thank you in advance.
       sudo usermod -a -G dialout {your_user_name} 
       ```
       - restart your computer
+## Known Issues for building on linux
+  - PyQt5 is missing library on ubuntu 20.10 called **libxcb-xinerama0** 
+    - solution: 
+      - install that library to your system
+      ```
+      sudo apt install libxcb-xinerama0 
+      ```
