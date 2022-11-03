@@ -215,30 +215,13 @@ class SerialThread(QtCore.QThread):
 
         data_out_queue_string = ''
         self.initialize_run_method()
+
         t_comport = None
         if self.comport is not None:
-            t_comport = self.comport
-        while len(self.available_ports) == 0 and self.running:
-            self.available_ports = self.comport_search()
-            if len(self.available_ports) > 0:
-                self.serial.port = self.available_ports[0]
-                self.comport = self.serial.port
-                self.running=True
-            else:
-                self.gui.button_setup_left.setEnabled(True)
-            self.gui.text_to_update_3.put('Not Connected, attempting to connect number {0}\n'.format(self.count))
-            self.count = self.count + 1
-            if self.count > 10:
-                if self.serial:
-                    self.serial.close()
-                self.initialize_run_method()
-
-            if t_comport is not None:
-                self.serial.port = t_comport
-                self.comport = t_comport
-            else:
-                self.serial.port = self.comport
-      
+            self.serial.port = self.comport
+            self.running = True
+        else:
+            self.gui.button_setup_left.setEnabled(True)
         if self.running and self.check():
             self.gui.text_to_update_3.put("Connected to %s at %u baud" % (self.serial.port, self.baud_rate) + '\n')
         else:

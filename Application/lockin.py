@@ -73,8 +73,6 @@ class MainWindow(QDialog):
         self.serial_thread.running = False
         self.help_window.close()
         self.plot_window.close()
-        if self.serial_thread is not None and self.serial_thread.serial is not None and self.serial_thread.serial:
-            self.serial_thread.serial.close()
         self.reader.stop = True
         self.serial_thread.running = False
         print('Window closed')
@@ -201,13 +199,13 @@ class MainWindow(QDialog):
                 self.running = True
                 self.serial_thread.start()
                 self.reader.serial_thread = self.serial_thread
-                #self.drop_down_comports.clear()
+                # self.drop_down_comports.clear()
 
         else:
             self.text_to_update_3.put("There are not available ports!")
         pass
 
-    def connecteSet(self,enable : bool):
+    def connecteSet(self, enable: bool):
         self.group_box_left_gen.setEnabled(enable)
         self.group_box_right_gen.setEnabled(enable)
         self.group_box_ssp.setEnabled(enable)
