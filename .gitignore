@@ -14,6 +14,7 @@
 *.gz
 *.cb2
 .*.lbW
+Application/leo/*
 Application/__pycache__/*
 Application/.idea/*
 Application/data.cvs

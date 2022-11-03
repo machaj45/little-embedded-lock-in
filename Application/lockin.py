@@ -641,6 +641,8 @@ class MainWindow(QDialog):
 
         self.label_amplitude_left = QLabel("Amplitude")
         self.edit_amplitude_left = QLineEdit("85")
+
+       
         self.edit_amplitude_left.textChanged.connect(self.on_edit_change_amplitude_left)
         self.slider_amplitude_left = QSlider(Qt.Horizontal, self)
         self.slider_amplitude_left.setRange(0, 100)
@@ -659,6 +661,7 @@ class MainWindow(QDialog):
 
         self.label_frequency_left = QLabel("Frequency")
         self.edit_frequency_left = QLineEdit("100")
+        
         self.edit_frequency_left.textChanged.connect(self.on_edit_change_frequency_left)
         self.button_start_left = QPushButton("Start")
         self.button_stop_left = QPushButton("Stop")
@@ -821,7 +824,7 @@ class MainWindow(QDialog):
         self.timer.timeout.connect(self.update_text)
         self.connecteSet(False)
         self.automatic_update_check()
-        self.serial_thread.start()
+        #self.serial_thread.start()
         self.reader.start()
 
 

@@ -24,7 +24,7 @@ case "$(uname -s)" in
    CYGWIN*|MINGW32*|MSYS*|MINGW*)
      echo 'MS Windows'
      # shellcheck disable=SC2006
-     `pyinstaller.exe --onefile -w --add-binary "data\\icon.ico;icon.ico" --add-binary "data\\hi_res_icon.png;hi_res_icon.png" --icon "data\\icon.ico" -n "lock-in"  lockin.py`
+     `pyinstaller.exe --onefile -w --add-binary "data\\icon.ico;icon.ico" --add-binary "data\\hi_res_icon.png;hi_res_icon.png" --icon "data\\icon.ico" -n "lock-in"  lockin.py --exclude=matplotlib.tests,numpy.random._examples`
      #`pyinstaller.exe --onefile -w --add-binary "data\\icon.ico;icon.ico" --add-binary "data\\hi_res_icon.png;hi_res_icon.png" --icon "data\\icon.ico" -n "lock-in"  lockin.py`
      rm -rf ./build
      rm -rf ./__pycache__
